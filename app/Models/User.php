@@ -58,7 +58,11 @@ class User extends Authenticatable
 
     public function isActive(): bool
     {
-        return $this->status === 'active';
+        if ($this->isAdmin()) {
+            return true;
+        }
+
+        return ($this->status ?? 'active') === 'active';
     }
 
     public function isBlocked(): bool
