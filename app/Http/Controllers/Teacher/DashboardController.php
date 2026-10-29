@@ -16,8 +16,8 @@ class DashboardController extends Controller
 {
     public function index(Request $request): View
     {
-        $teacher = Auth::user();
-        $teacherId = $teacher->id;
+        $user = Auth::user();
+        $teacherId = $user->effectiveTeacherId();
 
         // Teacher's classes
         $classes = ClassRoom::where('teacher_id', $teacherId)->get();

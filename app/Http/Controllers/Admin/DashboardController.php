@@ -11,6 +11,7 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
 
@@ -94,9 +95,12 @@ class DashboardController extends Controller
     {
         $teachers = User::where('role', 'teacher')
             ->withCount('classes')
-            ->with(['classes' => function ($q) {
-                $q->withCount('enrollments');
-            }])
+            ->with([
+                'classes' => function ($q) {
+                    $q->withCount('enrollments');
+                },
+                'assistants',
+            ])
             ->latest()
             ->get();
 
@@ -119,10 +123,51 @@ class DashboardController extends Controller
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
             'role' => 'teacher',
+            'status' => 'active',
             'email_verified_at' => now(),
         ]);
 
         return back()->with('success', "Teacher account for {$teacher->name} created successfully!");
+    }
+
+    /**
+     * Update user account status (active, inactive, blocked).
+     */
+    public function updateUserStatus(Request $request, User $user): RedirectResponse
+    {
+        if ($user->id === Auth::id()) {
+            return back()->with('error', 'You cannot change your own administrator account status.');
+        }
+
+        $validated = $request->validate([
+            'status' => ['required', 'in:active,inactive,blocked'],
+        ]);
+
+        $user->update(['status' => $validated['status']]);
+
+        $statusLabel = match ($validated['status']) {
+            'blocked' => 'Temporarily Blocked',
+            'inactive' => 'Inactive',
+            default => 'Active',
+        };
+
+        return back()->with('success', "Status of {$user->name} ({$user->role}) has been updated to {$statusLabel}.");
+    }
+
+    /**
+     * Delete an instructor or assistant account.
+     */
+    public function destroyUser(User $user): RedirectResponse
+    {
+        if ($user->id === Auth::id()) {
+            return back()->with('error', 'You cannot delete your own administrator account.');
+        }
+
+        $name = $user->name;
+        $role = ucfirst($user->role);
+        $user->delete();
+
+        return back()->with('info', "{$role} account for '{$name}' has been deleted.");
     }
 
     /**

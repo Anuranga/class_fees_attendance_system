@@ -139,6 +139,8 @@ class AttendanceController extends Controller
 
         // 3. Determine if late or present based on time of day (or default to present)
         $status = 'present';
+        $tuteProvided = $request->boolean('tute_provided');
+        $tuteName = $request->input('tute_name');
 
         $attendance = Attendance::create([
             'class_id' => $class->id,
@@ -146,6 +148,8 @@ class AttendanceController extends Controller
             'date' => $today,
             'check_in_time' => $currentTime,
             'status' => $status,
+            'tute_provided' => $tuteProvided,
+            'tute_name' => $tuteName,
             'marked_by' => Auth::id(),
         ]);
 
@@ -159,7 +163,7 @@ class AttendanceController extends Controller
         return response()->json([
             'success' => true,
             'status' => 'marked',
-            'message' => "Check-in Confirmed: {$student->full_name}",
+            'message' => "Check-in Confirmed: {$student->full_name}".($tuteProvided ? ' (Tute Issued)' : ''),
             'student' => [
                 'id' => $student->id,
                 'full_name' => $student->full_name,
@@ -172,6 +176,8 @@ class AttendanceController extends Controller
                 'id' => $attendance->id,
                 'check_in_time' => Carbon::parse($currentTime)->format('h:i:s A'),
                 'status' => $status,
+                'tute_provided' => $attendance->tute_provided,
+                'tute_name' => $attendance->tute_name,
                 'date' => $today,
             ],
             'stats' => [
@@ -195,6 +201,8 @@ class AttendanceController extends Controller
             'student_id' => ['required', 'exists:students,id'],
             'date' => ['required', 'date'],
             'status' => ['required', 'in:present,late,absent,delete'],
+            'tute_provided' => ['nullable', 'boolean'],
+            'tute_name' => ['nullable', 'string', 'max:150'],
         ]);
 
         $studentId = $validated['student_id'];
@@ -210,25 +218,51 @@ class AttendanceController extends Controller
             return back()->with('info', 'Attendance record cleared/marked as absent.');
         }
 
+        $attributes = [
+            'check_in_time' => Carbon::now()->toTimeString(),
+            'status' => $status,
+            'marked_by' => Auth::id(),
+        ];
+
+        if ($request->has('tute_provided')) {
+            $attributes['tute_provided'] = $request->boolean('tute_provided');
+        }
+        if ($request->filled('tute_name')) {
+            $attributes['tute_name'] = $request->input('tute_name');
+        }
+
         Attendance::updateOrCreate(
             [
                 'class_id' => $class->id,
                 'student_id' => $studentId,
                 'date' => $date,
             ],
-            [
-                'check_in_time' => Carbon::now()->toTimeString(),
-                'status' => $status,
-                'marked_by' => Auth::id(),
-            ]
+            $attributes
         );
 
         return back()->with('success', "Attendance updated to '{$status}'.");
     }
 
+    /**
+     * Quick 1-click toggle for Tute provision.
+     */
+    public function toggleTute(Request $request, ClassRoom $class, Attendance $attendance): RedirectResponse
+    {
+        $this->authorizeTeacher($class);
+
+        $attendance->update([
+            'tute_provided' => ! $attendance->tute_provided,
+            'marked_by' => Auth::id(),
+        ]);
+
+        $state = $attendance->tute_provided ? 'marked as Issued' : 'marked as NOT Issued';
+
+        return back()->with('success', "Tutorial sheet {$state} for {$attendance->student->full_name}.");
+    }
+
     protected function authorizeTeacher(ClassRoom $class): void
     {
-        if ($class->teacher_id !== Auth::id() && ! Auth::user()->isAdmin()) {
+        if ($class->teacher_id !== Auth::user()->effectiveTeacherId() && ! Auth::user()->isAdmin()) {
             abort(403, 'Unauthorized. You do not own this class.');
         }
     }

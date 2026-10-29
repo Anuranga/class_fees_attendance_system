@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -13,11 +14,18 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
+    protected $attributes = [
+        'role' => 'teacher',
+        'status' => 'active',
+    ];
+
     protected $fillable = [
         'name',
         'email',
         'password',
         'role',
+        'status',
+        'teacher_id',
     ];
 
     protected $hidden = [
@@ -41,6 +49,46 @@ class User extends Authenticatable
     public function isTeacher(): bool
     {
         return $this->role === 'teacher';
+    }
+
+    public function isAssistant(): bool
+    {
+        return $this->role === 'assistant';
+    }
+
+    public function isActive(): bool
+    {
+        return $this->status === 'active';
+    }
+
+    public function isBlocked(): bool
+    {
+        return $this->status === 'blocked';
+    }
+
+    public function isInactive(): bool
+    {
+        return $this->status === 'inactive';
+    }
+
+    public function effectiveTeacherId(): int
+    {
+        return $this->isAssistant() ? (int) $this->teacher_id : (int) $this->id;
+    }
+
+    public function effectiveTeacher(): ?User
+    {
+        return $this->isAssistant() ? $this->teacher : $this;
+    }
+
+    public function teacher(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'teacher_id');
+    }
+
+    public function assistants(): HasMany
+    {
+        return $this->hasMany(User::class, 'teacher_id');
     }
 
     public function classes(): HasMany

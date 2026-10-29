@@ -21,7 +21,7 @@ class ClassController extends Controller
      */
     public function index(): View
     {
-        $teacherId = Auth::id();
+        $teacherId = Auth::user()->effectiveTeacherId();
         $classes = ClassRoom::withCount(['students' => function ($q) {
             $q->where('class_student.status', 'active');
         }])->where('teacher_id', $teacherId)->latest()->get();
@@ -44,7 +44,7 @@ class ClassController extends Controller
         ]);
 
         $classRoom = ClassRoom::create([
-            'teacher_id' => Auth::id(),
+            'teacher_id' => Auth::user()->effectiveTeacherId(),
             'name' => $validated['name'],
             'grade_level' => $validated['grade_level'],
             'monthly_fee' => $validated['monthly_fee'],
@@ -214,7 +214,7 @@ class ClassController extends Controller
      */
     protected function authorizeTeacher(ClassRoom $class): void
     {
-        if ($class->teacher_id !== Auth::id() && ! Auth::user()->isAdmin()) {
+        if ($class->teacher_id !== Auth::user()->effectiveTeacherId() && ! Auth::user()->isAdmin()) {
             abort(403, 'Unauthorized. You do not own this class.');
         }
     }

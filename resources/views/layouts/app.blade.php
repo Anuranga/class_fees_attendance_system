@@ -50,7 +50,14 @@
                     </div>
                     <div>
                         <span class="font-extrabold text-lg text-white tracking-tight flex items-center gap-1.5">
-                            EduTrack <span class="text-xs font-semibold px-2 py-0.5 rounded-full {{ Auth::user()->isAdmin() ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' }}">{{ ucfirst(Auth::user()->role) }}</span>
+                            EduTrack 
+                            @if(Auth::user()->isAdmin())
+                                <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">Admin</span>
+                            @elseif(Auth::user()->isAssistant())
+                                <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">Assistant</span>
+                            @else
+                                <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">Teacher</span>
+                            @endif
                         </span>
                         <p class="text-xs text-slate-400">Attendance & Fee Portal</p>
                     </div>
@@ -67,7 +74,11 @@
                 </div>
                 <div class="flex-1 min-w-0">
                     <p class="text-sm font-semibold text-white truncate">{{ Auth::user()->name }}</p>
-                    <p class="text-xs text-slate-400 truncate">{{ Auth::user()->email }}</p>
+                    @if(Auth::user()->isAssistant() && Auth::user()->teacher)
+                        <p class="text-[11px] text-cyan-400 truncate">Assistant to {{ Auth::user()->teacher->name }}</p>
+                    @else
+                        <p class="text-xs text-slate-400 truncate">{{ Auth::user()->email }}</p>
+                    @endif
                 </div>
             </div>
 
@@ -129,6 +140,14 @@
                         <i class="fa-solid fa-receipt w-5 text-center text-base"></i>
                         <span>Cash Collection & Fees</span>
                     </a>
+
+                    @if(Auth::user()->isTeacher())
+                        <a href="{{ route('teacher.assistants.index') }}" 
+                           class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all {{ request()->routeIs('teacher.assistants.*') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                            <i class="fa-solid fa-users-gear w-5 text-center text-base"></i>
+                            <span>Teaching Assistants</span>
+                        </a>
+                    @endif
                 @endif
 
                 <div class="pt-4 border-t border-slate-800/80 my-3"></div>

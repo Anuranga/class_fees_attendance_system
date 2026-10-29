@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PublicRegistrationController;
+use App\Http\Controllers\Teacher\AssistantController as TeacherAssistantController;
 use App\Http\Controllers\Teacher\AttendanceController as TeacherAttendanceController;
 use App\Http\Controllers\Teacher\ClassController as TeacherClassController;
 use App\Http\Controllers\Teacher\DashboardController as TeacherDashboardController;
@@ -30,7 +31,7 @@ Route::get('/student/lookup', [PublicRegistrationController::class, 'lookup'])->
 
 /*
 |--------------------------------------------------------------------------
-| Teacher Multi-Tenant Isolated Routes
+| Teacher & Assistant Isolated Workspace Routes
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth', 'role:teacher'])->prefix('teacher')->name('teacher.')->group(function () {
@@ -45,16 +46,23 @@ Route::middleware(['auth', 'role:teacher'])->prefix('teacher')->name('teacher.')
     Route::post('/classes/{class}/students/manual', [TeacherClassController::class, 'enrollStudentManual'])->name('classes.students.manual');
     Route::delete('/classes/{class}/students/{student}', [TeacherClassController::class, 'removeStudent'])->name('classes.students.remove');
 
-    // Attendance & QR Scanner
+    // Attendance, QR Scanner & Tute Tracking
     Route::get('/classes/{class}/attendance', [TeacherAttendanceController::class, 'show'])->name('attendance.show');
     Route::post('/classes/{class}/attendance/scan', [TeacherAttendanceController::class, 'scan'])->name('attendance.scan');
     Route::post('/classes/{class}/attendance/manual', [TeacherAttendanceController::class, 'manualMark'])->name('attendance.manual');
+    Route::post('/classes/{class}/attendance/{attendance}/toggle-tute', [TeacherAttendanceController::class, 'toggleTute'])->name('attendance.toggle-tute');
 
     // Fee Management & Cash Collections
     Route::get('/fees', [TeacherFeeController::class, 'index'])->name('fees.index');
     Route::post('/fees/collect', [TeacherFeeController::class, 'collect'])->name('fees.collect');
     Route::get('/fees/receipt/{payment}', [TeacherFeeController::class, 'receipt'])->name('fees.receipt');
     Route::delete('/fees/{payment}', [TeacherFeeController::class, 'destroy'])->name('fees.destroy');
+
+    // Teaching Assistants Management
+    Route::get('/assistants', [TeacherAssistantController::class, 'index'])->name('assistants.index');
+    Route::post('/assistants', [TeacherAssistantController::class, 'store'])->name('assistants.store');
+    Route::post('/assistants/{assistant}/toggle-status', [TeacherAssistantController::class, 'toggleStatus'])->name('assistants.toggle-status');
+    Route::delete('/assistants/{assistant}', [TeacherAssistantController::class, 'destroy'])->name('assistants.destroy');
 });
 
 /*
@@ -66,6 +74,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
     Route::get('/teachers', [AdminDashboardController::class, 'teachers'])->name('teachers.index');
     Route::post('/teachers', [AdminDashboardController::class, 'storeTeacher'])->name('teachers.store');
+    Route::post('/users/{user}/status', [AdminDashboardController::class, 'updateUserStatus'])->name('users.status');
+    Route::delete('/users/{user}', [AdminDashboardController::class, 'destroyUser'])->name('users.destroy');
     Route::get('/payments', [AdminDashboardController::class, 'payments'])->name('payments.index');
     Route::get('/students', [AdminDashboardController::class, 'students'])->name('students.index');
 });

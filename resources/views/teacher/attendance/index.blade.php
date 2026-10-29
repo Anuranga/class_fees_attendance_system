@@ -181,6 +181,15 @@
                         <span x-show="processing"><i class="fa-solid fa-spinner animate-spin"></i></span>
                     </button>
                 </form>
+
+                <!-- Auto-mark Tute Distribution Option -->
+                <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                    <label class="flex items-center gap-2 cursor-pointer text-slate-700 font-semibold">
+                        <input type="checkbox" x-model="tuteChecked" class="w-4 h-4 rounded text-indigo-600 border-slate-300 focus:ring-indigo-500/20">
+                        <span>Hand out & mark lesson tute upon check-in</span>
+                    </label>
+                    <span class="text-[11px] font-bold px-2 py-0.5 rounded-full" :class="tuteChecked ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-500'" x-text="tuteChecked ? 'Tute Handout Active' : 'Attendance Only'"></span>
+                </div>
             </div>
 
         </div>
@@ -208,6 +217,7 @@
                                 <th class="py-3 px-4">Class UID</th>
                                 <th class="py-3 px-4">Check-In Time</th>
                                 <th class="py-3 px-4">Status</th>
+                                <th class="py-3 px-4">Tute Distribution</th>
                                 <th class="py-3 px-4 text-right">Manual Action</th>
                             </tr>
                         </thead>
@@ -237,6 +247,22 @@
                                             {{ ucfirst($record->status) }}
                                         </span>
                                     </td>
+                                    <td class="py-3 px-4">
+                                        <form action="{{ route('teacher.attendance.toggle-tute', [$classRoom, $record]) }}" method="POST" class="inline">
+                                            @csrf
+                                            @if($record->tute_provided)
+                                                <button type="submit" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-emerald-100 hover:bg-emerald-200 text-emerald-800 transition-colors" title="Click to toggle tute status">
+                                                    <i class="fa-solid fa-file-circle-check text-emerald-600"></i>
+                                                    <span>Tute Issued</span>
+                                                </button>
+                                            @else
+                                                <button type="submit" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors" title="Click to mark tute as issued">
+                                                    <i class="fa-solid fa-file-circle-xmark text-slate-400"></i>
+                                                    <span>Not Issued</span>
+                                                </button>
+                                            @endif
+                                        </form>
+                                    </td>
                                     <td class="py-3 px-4 text-right">
                                         <form action="{{ route('teacher.attendance.manual', $classRoom) }}" method="POST" class="inline">
                                             @csrf
@@ -251,7 +277,7 @@
                                 </tr>
                             @empty
                                 <tr id="noScansRow">
-                                    <td colspan="5" class="py-12 text-center text-slate-400">
+                                    <td colspan="6" class="py-12 text-center text-slate-400">
                                         <i class="fa-solid fa-qrcode text-3xl text-slate-300 mb-2 block"></i>
                                         <span>No attendance marked for this session yet. Scan QR code or type token to begin.</span>
                                     </td>
@@ -337,6 +363,7 @@ function attendanceScanner() {
         html5QrCode: null,
         isScanning: false,
         processing: false,
+        tuteChecked: true,
         lastScannedToken: null,
         lastScanTimestamp: 0,
         manualToken: '',
@@ -443,7 +470,7 @@ function attendanceScanner() {
                         'X-CSRF-TOKEN': this.csrfToken,
                         'Accept': 'application/json'
                     },
-                    body: JSON.stringify({ qr_token: token })
+                    body: JSON.stringify({ qr_token: token, tute_provided: this.tuteChecked })
                 });
 
                 const data = await response.json();
@@ -520,6 +547,12 @@ function attendanceScanner() {
                     <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800">
                         Present
                     </span>
+                </td>
+                <td class="py-3 px-4">
+                    ${attendance.tute_provided 
+                        ? '<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-emerald-100 text-emerald-800"><i class="fa-solid fa-file-circle-check text-emerald-600"></i> Tute Issued</span>'
+                        : '<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-slate-100 text-slate-500"><i class="fa-solid fa-file-circle-xmark text-slate-400"></i> Not Issued</span>'
+                    }
                 </td>
                 <td class="py-3 px-4 text-right">
                     <span class="text-xs text-emerald-600 font-bold"><i class="fa-solid fa-circle-check"></i> Scanned</span>

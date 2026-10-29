@@ -18,11 +18,14 @@ class Attendance extends Model
         'date',
         'check_in_time',
         'status',
+        'tute_provided',
+        'tute_name',
         'marked_by',
     ];
 
     protected $casts = [
         'date' => 'date',
+        'tute_provided' => 'boolean',
     ];
 
     public function classRoom(): BelongsTo

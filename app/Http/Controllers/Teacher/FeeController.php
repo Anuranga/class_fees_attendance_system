@@ -20,7 +20,7 @@ class FeeController extends Controller
      */
     public function index(Request $request): View
     {
-        $teacherId = Auth::id();
+        $teacherId = Auth::user()->effectiveTeacherId();
         $classes = ClassRoom::where('teacher_id', $teacherId)->get();
         $classIds = $classes->pluck('id')->toArray();
 
@@ -183,7 +183,7 @@ class FeeController extends Controller
      */
     public function destroy(Payment $payment): RedirectResponse
     {
-        if ($payment->teacher_id !== Auth::id() && ! Auth::user()->isAdmin()) {
+        if ($payment->teacher_id !== Auth::user()->effectiveTeacherId() && ! Auth::user()->isAdmin()) {
             abort(403, 'Unauthorized.');
         }
 
