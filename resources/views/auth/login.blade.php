@@ -40,9 +40,9 @@
                     <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                         <i class="fa-solid fa-envelope text-sm"></i>
                     </div>
-                    <input type="email" id="email" name="email" value="{{ old('email', 'teacher@edutrack.test') }}" required autofocus
+                    <input type="email" id="email" name="email" value="{{ old('email') }}" required autofocus
                            class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-900/80 border border-slate-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 text-white placeholder-slate-500 text-sm transition-all"
-                           placeholder="name@edutrack.test">
+                           placeholder="you@edutrack.test">
                 </div>
                 @error('email')
                     <p class="mt-1.5 text-xs text-rose-400">{{ $message }}</p>
@@ -56,7 +56,7 @@
                     <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                         <i class="fa-solid fa-lock text-sm"></i>
                     </div>
-                    <input type="password" id="password" name="password" value="password" required
+                    <input type="password" id="password" name="password" required
                            class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-900/80 border border-slate-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 text-white placeholder-slate-500 text-sm transition-all"
                            placeholder="••••••••">
                 </div>
@@ -71,7 +71,6 @@
                     <input type="checkbox" name="remember" class="w-4 h-4 rounded bg-slate-900 border-slate-700 text-indigo-600 focus:ring-indigo-500/30">
                     <span>Remember this device</span>
                 </label>
-                <span class="text-slate-400">Default password: <code class="text-indigo-300">password</code></span>
             </div>
 
             <!-- Submit -->
@@ -81,46 +80,6 @@
                 <i class="fa-solid fa-arrow-right text-xs"></i>
             </button>
         </form>
-
-        <!-- Quick 1-Click Demo Logins -->
-        <div class="mt-8 pt-6 border-t border-slate-700/60">
-            <p class="text-xs font-bold uppercase tracking-wider text-slate-400 text-center mb-3">Quick Demo Instant Logins</p>
-            <div class="grid grid-cols-1 gap-2.5">
-                <a href="{{ route('quick.login', 'teacher') }}" class="px-3.5 py-2.5 rounded-xl bg-slate-900/60 hover:bg-indigo-600/20 border border-slate-700/70 hover:border-indigo-500/40 text-left transition-all flex items-center justify-between group">
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-xs font-bold">AT</div>
-                        <div>
-                            <p class="text-xs font-semibold text-white group-hover:text-indigo-300">Prof. Alan Turing</p>
-                            <p class="text-[11px] text-slate-400">Teacher &bull; 3 Classes &bull; 20+ Students</p>
-                        </div>
-                    </div>
-                    <i class="fa-solid fa-bolt text-indigo-400 text-xs"></i>
-                </a>
-
-                <a href="{{ route('quick.login', 'grace') }}" class="px-3.5 py-2.5 rounded-xl bg-slate-900/60 hover:bg-purple-600/20 border border-slate-700/70 hover:border-purple-500/40 text-left transition-all flex items-center justify-between group">
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center text-xs font-bold">GH</div>
-                        <div>
-                            <p class="text-xs font-semibold text-white group-hover:text-purple-300">Dr. Grace Hopper</p>
-                            <p class="text-[11px] text-slate-400">Teacher &bull; ICT Class &bull; Multi-Tenant</p>
-                        </div>
-                    </div>
-                    <i class="fa-solid fa-bolt text-purple-400 text-xs"></i>
-                </a>
-
-                <a href="{{ route('quick.login', 'admin') }}" class="px-3.5 py-2.5 rounded-xl bg-slate-900/60 hover:bg-amber-600/20 border border-slate-700/70 hover:border-amber-500/40 text-left transition-all flex items-center justify-between group">
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center text-xs font-bold">AD</div>
-                        <div>
-                            <p class="text-xs font-semibold text-white group-hover:text-amber-300">System Administrator</p>
-                            <p class="text-[11px] text-slate-400">Full System Oversight & Teachers Directory</p>
-                        </div>
-                    </div>
-                    <i class="fa-solid fa-shield-halved text-amber-400 text-xs"></i>
-                </a>
-            </div>
-        </div>
-
     </div>
 
 </div>

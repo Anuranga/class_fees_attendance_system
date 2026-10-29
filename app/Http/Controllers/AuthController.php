@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -46,27 +45,6 @@ class AuthController extends Controller
         return back()->withErrors([
             'email' => 'The provided credentials do not match our records.',
         ])->onlyInput('email');
-    }
-
-    public function quickLogin(string $role): RedirectResponse
-    {
-        $email = match ($role) {
-            'admin' => 'admin@edutrack.test',
-            'grace' => 'grace@edutrack.test',
-            default => 'teacher@edutrack.test',
-        };
-
-        $user = User::where('email', $email)->first();
-        if ($user) {
-            Auth::login($user);
-            request()->session()->regenerate();
-
-            return $user->isAdmin()
-                ? redirect()->route('admin.dashboard')->with('success', "Quick logged in as {$user->name} (Admin)")
-                : redirect()->route('teacher.dashboard')->with('success', "Quick logged in as {$user->name} (Teacher)");
-        }
-
-        return redirect()->route('login')->with('error', 'Demo user not found. Please run seeders.');
     }
 
     public function logout(Request $request): RedirectResponse

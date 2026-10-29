@@ -20,7 +20,6 @@ Route::get('/', function () {
 
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
-Route::get('/quick-login/{role}', [AuthController::class, 'quickLogin'])->name('quick.login');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 // Public Self-Registration & ID Pass
