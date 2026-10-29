@@ -2,7 +2,10 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="h-full bg-slate-50">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#4f46e5">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>@yield('title', 'Dashboard') - {{ config('app.name', 'EduTrack') }}</title>
@@ -178,14 +181,14 @@
         <div class="flex-1 flex flex-col min-w-0 overflow-hidden bg-slate-50">
             
             <!-- Top Navbar -->
-            <header class="h-20 bg-white/90 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-30 px-6 flex items-center justify-between shadow-xs">
-                <div class="flex items-center gap-4">
-                    <button @click="sidebarOpen = true" class="lg:hidden text-slate-600 hover:text-slate-900 p-2 rounded-lg hover:bg-slate-100">
+            <header class="h-16 sm:h-20 bg-white/90 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-30 px-4 sm:px-6 flex items-center justify-between shadow-xs">
+                <div class="flex items-center gap-3 sm:gap-4 min-w-0">
+                    <button @click="sidebarOpen = true" class="lg:hidden text-slate-600 hover:text-slate-900 p-2 rounded-lg hover:bg-slate-100 shrink-0" aria-label="Open Navigation">
                         <i class="fa-solid fa-bars text-xl"></i>
                     </button>
-                    <div>
-                        <h1 class="text-xl font-bold text-slate-900 tracking-tight">@yield('page-title', 'Dashboard')</h1>
-                        <p class="text-xs text-slate-500 hidden sm:block">@yield('page-subtitle', 'Academic & Financial Management System')</p>
+                    <div class="min-w-0">
+                        <h1 class="text-base sm:text-xl font-bold text-slate-900 tracking-tight truncate">@yield('page-title', 'Dashboard')</h1>
+                        <p class="text-[11px] sm:text-xs text-slate-500 hidden sm:block truncate">@yield('page-subtitle', 'Academic & Financial Management System')</p>
                     </div>
                 </div>
 
@@ -243,14 +246,80 @@
             </div>
 
             <!-- Page Body Content -->
-            <main class="flex-1 p-6">
+            <main class="flex-1 p-3.5 sm:p-6 pb-28 lg:pb-8">
                 @yield('content')
             </main>
 
             <!-- Footer -->
-            <footer class="py-4 px-6 border-t border-slate-200/80 bg-white text-center text-xs text-slate-500">
+            <footer class="py-4 px-6 border-t border-slate-200/80 bg-white text-center text-xs text-slate-500 hidden sm:block">
                 &copy; {{ date('Y') }} EduTrack - Student Attendance & Fee Collection Management System.
             </footer>
+
+            <!-- Mobile Bottom Navigation Bar (Phone Friendly) -->
+            <nav class="lg:hidden fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-slate-200/90 z-30 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] pb-[env(safe-area-inset-bottom)]">
+                <div class="grid grid-cols-5 items-center h-16 px-1">
+                    @if(Auth::user()->isAdmin())
+                        <!-- Admin Bottom Navigation -->
+                        <a href="{{ route('admin.dashboard') }}" 
+                           class="flex flex-col items-center justify-center py-1 {{ request()->routeIs('admin.dashboard') ? 'text-indigo-600 font-bold' : 'text-slate-500 hover:text-slate-800' }}">
+                            <i class="fa-solid fa-chart-pie text-lg"></i>
+                            <span class="text-[10px] mt-0.5 font-semibold">Overview</span>
+                        </a>
+                        <a href="{{ route('admin.teachers.index') }}" 
+                           class="flex flex-col items-center justify-center py-1 {{ request()->routeIs('admin.teachers.*') ? 'text-indigo-600 font-bold' : 'text-slate-500 hover:text-slate-800' }}">
+                            <i class="fa-solid fa-chalkboard-user text-lg"></i>
+                            <span class="text-[10px] mt-0.5 font-semibold">Teachers</span>
+                        </a>
+                        <a href="{{ route('admin.payments.index') }}" 
+                           class="flex flex-col items-center justify-center py-1 {{ request()->routeIs('admin.payments.*') ? 'text-indigo-600 font-bold' : 'text-slate-500 hover:text-slate-800' }}">
+                            <i class="fa-solid fa-money-bill-wave text-lg"></i>
+                            <span class="text-[10px] mt-0.5 font-semibold">Payments</span>
+                        </a>
+                        <a href="{{ route('admin.students.index') }}" 
+                           class="flex flex-col items-center justify-center py-1 {{ request()->routeIs('admin.students.*') ? 'text-indigo-600 font-bold' : 'text-slate-500 hover:text-slate-800' }}">
+                            <i class="fa-solid fa-users text-lg"></i>
+                            <span class="text-[10px] mt-0.5 font-semibold">Students</span>
+                        </a>
+                        <button @click="sidebarOpen = true" 
+                                class="flex flex-col items-center justify-center py-1 text-slate-500 hover:text-slate-800">
+                            <i class="fa-solid fa-bars text-lg"></i>
+                            <span class="text-[10px] mt-0.5 font-semibold">Menu</span>
+                        </button>
+                    @else
+                        <!-- Teacher & Assistant Bottom Navigation -->
+                        <a href="{{ route('teacher.dashboard') }}" 
+                           class="flex flex-col items-center justify-center py-1 {{ request()->routeIs('teacher.dashboard') ? 'text-indigo-600 font-bold' : 'text-slate-500 hover:text-slate-800' }}">
+                            <i class="fa-solid fa-chart-line text-lg"></i>
+                            <span class="text-[10px] mt-0.5 font-semibold">Stats</span>
+                        </a>
+                        <a href="{{ route('teacher.classes.index') }}" 
+                           class="flex flex-col items-center justify-center py-1 {{ request()->routeIs('teacher.classes.*') && !request()->routeIs('teacher.attendance.*') ? 'text-indigo-600 font-bold' : 'text-slate-500 hover:text-slate-800' }}">
+                            <i class="fa-solid fa-book-open-reader text-lg"></i>
+                            <span class="text-[10px] mt-0.5 font-semibold">Classes</span>
+                        </a>
+                        
+                        <!-- Center Elevated QR Scan Button for Mobile Phone -->
+                        <div class="relative flex items-center justify-center -top-3">
+                            <a href="{{ route('teacher.classes.index') }}" 
+                               class="w-12 h-12 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 text-white flex items-center justify-center shadow-lg shadow-indigo-600/40 ring-4 ring-white active:scale-95 transition-transform"
+                               title="Scan Attendance">
+                                <i class="fa-solid fa-qrcode text-lg"></i>
+                            </a>
+                        </div>
+
+                        <a href="{{ route('teacher.fees.index') }}" 
+                           class="flex flex-col items-center justify-center py-1 {{ request()->routeIs('teacher.fees.*') ? 'text-indigo-600 font-bold' : 'text-slate-500 hover:text-slate-800' }}">
+                            <i class="fa-solid fa-receipt text-lg"></i>
+                            <span class="text-[10px] mt-0.5 font-semibold">Fees</span>
+                        </a>
+                        <button @click="sidebarOpen = true" 
+                                class="flex flex-col items-center justify-center py-1 text-slate-500 hover:text-slate-800">
+                            <i class="fa-solid fa-bars text-lg"></i>
+                            <span class="text-[10px] mt-0.5 font-semibold">Menu</span>
+                        </button>
+                    @endif
+                </div>
+            </nav>
         </div>
     </div>
 

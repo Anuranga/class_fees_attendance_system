@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Attendance;
 use App\Models\ClassRoom;
 use App\Models\ClassStudent;
+use App\Models\Payment;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -112,6 +113,16 @@ class AttendanceController extends Controller
         }
 
         $student = $enrollment->student;
+        $currentMonth = Carbon::now()->format('Y-m');
+        $hasPaidMonth = Payment::where('student_id', $student->id)
+            ->where('class_id', $class->id)
+            ->where('payment_month', $currentMonth)
+            ->exists();
+        $feeStatus = [
+            'is_paid' => $hasPaidMonth,
+            'monthly_fee' => (float) $class->monthly_fee,
+            'month_label' => Carbon::now()->format('F Y'),
+        ];
 
         // 2. Check for duplicate attendance today (prevent duplicate marking)
         $existing = Attendance::where('class_id', $class->id)
@@ -133,7 +144,9 @@ class AttendanceController extends Controller
                 'attendance' => [
                     'check_in_time' => Carbon::parse($existing->check_in_time)->format('h:i:s A'),
                     'status' => $existing->status,
+                    'tute_provided' => (bool) $existing->tute_provided,
                 ],
+                'fee_status' => $feeStatus,
             ], 409); // 409 Conflict
         }
 
@@ -180,6 +193,7 @@ class AttendanceController extends Controller
                 'tute_name' => $attendance->tute_name,
                 'date' => $today,
             ],
+            'fee_status' => $feeStatus,
             'stats' => [
                 'total_enrolled' => $totalEnrolled,
                 'present_count' => $presentCount,
