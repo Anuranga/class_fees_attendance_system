@@ -156,4 +156,16 @@ class AssistantAndStatusTest extends TestCase
         ]);
         $this->assertEquals('active', $this->teacher->fresh()->status);
     }
+
+    public function test_teacher_dashboard_renders_for_teacher_and_admin(): void
+    {
+        // Teacher visits teacher dashboard
+        $response = $this->actingAs($this->teacher)->get(route('teacher.dashboard'));
+        $response->assertStatus(200);
+        $response->assertSee('Academic and Financial Overview');
+
+        // Admin can also view teacher dashboard
+        $adminResponse = $this->actingAs($this->admin)->get(route('teacher.dashboard'));
+        $adminResponse->assertStatus(200);
+    }
 }
