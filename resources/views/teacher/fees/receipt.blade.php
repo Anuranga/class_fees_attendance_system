@@ -82,11 +82,14 @@
         <!-- Student & Class Box -->
         <div class="rounded-xl bg-slate-50 p-4 border border-slate-100 mb-6">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                <div>
-                    <span class="text-slate-400 block text-[10px] font-bold uppercase">Student Details</span>
-                    <p class="text-sm font-black text-slate-900">{{ $payment->student->full_name }}</p>
-                    <p class="text-slate-500 font-mono text-[11px]">Admission No: {{ $payment->student->admission_number }}</p>
-                    <p class="text-slate-500 text-[11px]">Guardian: {{ $payment->student->guardian_name }} ({{ $payment->student->guardian_phone }})</p>
+                <div class="flex items-start gap-3">
+                    <img src="{{ $payment->student->avatar_url }}" alt="{{ $payment->student->full_name }}" class="w-12 h-12 rounded-xl object-cover border border-slate-200 bg-white shadow-xs shrink-0">
+                    <div>
+                        <span class="text-slate-400 block text-[10px] font-bold uppercase">Student Details</span>
+                        <p class="text-sm font-black text-slate-900">{{ $payment->student->full_name }}</p>
+                        <p class="text-slate-500 font-mono text-[11px]">Admission No: {{ $payment->student->admission_number }}</p>
+                        <p class="text-slate-500 text-[11px]">Guardian: {{ $payment->student->guardian_name }} ({{ $payment->student->guardian_phone }})</p>
+                    </div>
                 </div>
 
                 <div>

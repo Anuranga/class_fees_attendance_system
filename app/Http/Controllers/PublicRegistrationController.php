@@ -35,11 +35,20 @@ class PublicRegistrationController extends Controller
 
         $validated = $request->validate([
             'full_name' => ['required', 'string', 'max:255'],
+            'gender' => ['nullable', 'string', 'in:male,female'],
+            'photo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
             'contact_number' => ['required', 'string', 'max:30'],
             'guardian_name' => ['required', 'string', 'max:255'],
             'guardian_phone' => ['required', 'string', 'max:30'],
             'admission_number' => ['nullable', 'string', 'max:50'],
         ]);
+
+        $photoPath = null;
+        if ($request->hasFile('photo') && $request->file('photo')->isValid()) {
+            $photoPath = $request->file('photo')->store('students', 'public');
+        }
+
+        $gender = $validated['gender'] ?? 'male';
 
         // Clean phone numbers for better matching
         $contactNumber = trim($validated['contact_number']);
@@ -60,17 +69,26 @@ class PublicRegistrationController extends Controller
             $student = Student::create([
                 'admission_number' => $admissionNumber ?: Student::generateAdmissionNumber(),
                 'full_name' => $validated['full_name'],
+                'gender' => $gender,
+                'photo_path' => $photoPath,
                 'contact_number' => $contactNumber,
                 'guardian_name' => $validated['guardian_name'],
                 'guardian_phone' => trim($validated['guardian_phone']),
             ]);
         } else {
             // Update details if provided
-            $student->update([
+            $updateData = [
                 'full_name' => $validated['full_name'],
                 'guardian_name' => $validated['guardian_name'],
                 'guardian_phone' => trim($validated['guardian_phone']),
-            ]);
+            ];
+            if (! empty($validated['gender'])) {
+                $updateData['gender'] = $validated['gender'];
+            }
+            if ($photoPath) {
+                $updateData['photo_path'] = $photoPath;
+            }
+            $student->update($updateData);
         }
 
         // Check if already enrolled in this specific class

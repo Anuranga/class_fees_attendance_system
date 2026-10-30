@@ -68,7 +68,8 @@
                 </p>
             </div>
 
-            <form action="{{ route('public.join.process', $classRoom->registration_token) }}" method="POST" class="space-y-4">
+            <form action="{{ route('public.join.process', $classRoom->registration_token) }}" method="POST" enctype="multipart/form-data" 
+                  x-data="{ gender: '{{ old('gender', 'male') }}', photoPreview: null }" class="space-y-4">
                 @csrf
 
                 <!-- Student Full Name -->
@@ -78,6 +79,74 @@
                            class="w-full px-4 py-2.5 rounded-xl bg-slate-900/80 border border-slate-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 text-white placeholder-slate-500 text-sm transition-all"
                            placeholder="e.g. Johnathan Doe">
                     @error('full_name')
+                        <p class="mt-1 text-xs text-rose-400">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <!-- Gender & Default Avatar Choice -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Student Gender & Default Avatar *</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <!-- Boy Option -->
+                        <label class="cursor-pointer border-2 rounded-xl p-3 flex items-center gap-3 transition-all"
+                               :class="gender === 'male' ? 'border-indigo-500 bg-indigo-950/60 shadow-lg shadow-indigo-500/20' : 'border-slate-700 bg-slate-900/60 hover:bg-slate-900'">
+                            <input type="radio" name="gender" value="male" x-model="gender" class="sr-only">
+                            <img src="{{ asset('images/avatars/male.svg') }}" alt="Boy" class="w-10 h-10 rounded-full border border-indigo-400/40 bg-slate-800 p-0.5 shrink-0 shadow">
+                            <div>
+                                <p class="text-xs font-bold text-white">Boy / Male</p>
+                                <p class="text-[10px] text-slate-400">Default Avatar</p>
+                            </div>
+                            <i class="fa-solid fa-circle-check ml-auto text-indigo-400 text-sm" x-show="gender === 'male'"></i>
+                        </label>
+
+                        <!-- Girl Option -->
+                        <label class="cursor-pointer border-2 rounded-xl p-3 flex items-center gap-3 transition-all"
+                               :class="gender === 'female' ? 'border-pink-500 bg-pink-950/60 shadow-lg shadow-pink-500/20' : 'border-slate-700 bg-slate-900/60 hover:bg-slate-900'">
+                            <input type="radio" name="gender" value="female" x-model="gender" class="sr-only">
+                            <img src="{{ asset('images/avatars/female.svg') }}" alt="Girl" class="w-10 h-10 rounded-full border border-pink-400/40 bg-slate-800 p-0.5 shrink-0 shadow">
+                            <div>
+                                <p class="text-xs font-bold text-white">Girl / Female</p>
+                                <p class="text-[10px] text-slate-400">Default Avatar</p>
+                            </div>
+                            <i class="fa-solid fa-circle-check ml-auto text-pink-400 text-sm" x-show="gender === 'female'"></i>
+                        </label>
+                    </div>
+                    @error('gender')
+                        <p class="mt-1 text-xs text-rose-400">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <!-- Optional Student Photo / Selfie Upload with Live Preview -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Student Photo / Selfie (Optional)</label>
+                    <div class="flex items-center gap-4 p-3.5 rounded-xl border border-dashed border-slate-600 bg-slate-900/80">
+                        <!-- Live Avatar / Photo Preview -->
+                        <div class="w-14 h-14 rounded-full overflow-hidden border-2 border-indigo-500/50 bg-slate-800 shadow-md shrink-0 flex items-center justify-center">
+                            <template x-if="photoPreview">
+                                <img :src="photoPreview" class="w-full h-full object-cover">
+                            </template>
+                            <template x-if="!photoPreview">
+                                <img :src="gender === 'female' ? '{{ asset('images/avatars/female.svg') }}' : '{{ asset('images/avatars/male.svg') }}'" class="w-full h-full object-cover">
+                            </template>
+                        </div>
+
+                        <div class="flex-1 min-w-0">
+                            <input type="file" name="photo" id="photo_public" accept="image/*" class="sr-only"
+                                   @change="const file = $event.target.files[0]; if (file) { const reader = new FileReader(); reader.onload = (e) => { photoPreview = e.target.result; }; reader.readAsDataURL(file); }">
+                            <div class="flex items-center gap-2">
+                                <label for="photo_public" class="px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow cursor-pointer transition-all flex items-center gap-1.5">
+                                    <i class="fa-solid fa-camera"></i>
+                                    <span>Take Selfie / Upload Photo</span>
+                                </label>
+                                <button type="button" x-show="photoPreview" @click="photoPreview = null; document.getElementById('photo_public').value = ''" 
+                                        class="text-xs text-rose-400 hover:text-rose-300 font-semibold p-1">
+                                    <i class="fa-solid fa-trash-can"></i> Remove
+                                </button>
+                            </div>
+                            <p class="text-[11px] text-slate-400 mt-1">If you don't upload a picture, your selected Boy or Girl avatar will appear on your Student ID Pass.</p>
+                        </div>
+                    </div>
+                    @error('photo')
                         <p class="mt-1 text-xs text-rose-400">{{ $message }}</p>
                     @enderror
                 </div>

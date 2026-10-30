@@ -10,7 +10,9 @@ use App\Models\Student;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -247,5 +249,79 @@ class AttendanceAndFeeTest extends TestCase
         $response->assertSee('Daily Attendance & Cash Ledger');
         $response->assertSee('Total Cash Collected');
         $response->assertSee($this->classRoom->name);
+    }
+
+    public function test_student_gender_avatar_fallbacks_when_no_photo_uploaded(): void
+    {
+        // 1. Female student self-registration
+        $this->post(route('public.join.process', $this->classRoom->registration_token), [
+            'full_name' => 'Alice Female Student',
+            'gender' => 'female',
+            'contact_number' => '+1 555-1111',
+            'guardian_name' => 'Alice Parent',
+            'guardian_phone' => '+1 555-2222',
+        ]);
+
+        $alice = Student::where('contact_number', '+1 555-1111')->first();
+        $this->assertNotNull($alice);
+        $this->assertEquals('female', $alice->gender);
+        $this->assertNull($alice->photo_path);
+        $this->assertStringContainsString('images/avatars/female.svg', $alice->avatar_url);
+
+        // 2. Male student self-registration
+        $this->post(route('public.join.process', $this->classRoom->registration_token), [
+            'full_name' => 'Bob Male Student',
+            'gender' => 'male',
+            'contact_number' => '+1 555-3333',
+            'guardian_name' => 'Bob Parent',
+            'guardian_phone' => '+1 555-4444',
+        ]);
+
+        $bob = Student::where('contact_number', '+1 555-3333')->first();
+        $this->assertNotNull($bob);
+        $this->assertEquals('male', $bob->gender);
+        $this->assertNull($bob->photo_path);
+        $this->assertStringContainsString('images/avatars/male.svg', $bob->avatar_url);
+    }
+
+    public function test_student_manual_enrollment_with_photo_upload_stores_image_and_returns_in_scan(): void
+    {
+        Storage::fake('public');
+
+        $photo = UploadedFile::fake()->image('student_profile.jpg', 200, 200);
+
+        $response = $this->actingAs($this->teacher)
+            ->post(route('teacher.classes.students.manual', $this->classRoom), [
+                'mode' => 'new',
+                'full_name' => 'Photo Enrolled Student',
+                'gender' => 'female',
+                'photo' => $photo,
+                'contact_number' => '+1 555-5555',
+                'guardian_name' => 'Guardian Photo',
+                'guardian_phone' => '+1 555-6666',
+            ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $student = Student::where('contact_number', '+1 555-5555')->first();
+        $this->assertNotNull($student);
+        $this->assertEquals('female', $student->gender);
+        $this->assertNotNull($student->photo_path);
+
+        Storage::disk('public')->assertExists($student->photo_path);
+        $this->assertStringContainsString($student->photo_path, $student->avatar_url);
+
+        $enrollment = ClassStudent::where('class_id', $this->classRoom->id)
+            ->where('student_id', $student->id)
+            ->first();
+
+        // Scan QR code and verify avatar_url is in response
+        $scanResponse = $this->actingAs($this->teacher)->postJson(route('teacher.attendance.scan', $this->classRoom), [
+            'qr_token' => $enrollment->qr_token,
+        ]);
+
+        $scanResponse->assertStatus(200);
+        $scanResponse->assertJsonPath('student.avatar_url', $student->avatar_url);
     }
 }

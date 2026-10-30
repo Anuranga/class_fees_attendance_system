@@ -258,10 +258,17 @@
                 
                 <div class="flex items-start justify-between gap-3">
                     <div class="flex items-center gap-3">
-                        <div class="w-11 h-11 rounded-full flex items-center justify-center font-bold text-sm text-white shadow"
-                             :class="latestStatus === 'duplicate' ? 'bg-amber-500' : 'bg-emerald-600'">
-                            <span x-text="latestStudent ? latestStudent.full_name.substring(0, 2).toUpperCase() : ''"></span>
-                        </div>
+                        <template x-if="latestStudent?.avatar_url">
+                            <img :src="latestStudent.avatar_url" :alt="latestStudent.full_name" 
+                                 class="w-12 h-12 rounded-full object-cover border-2 shadow-md bg-white shrink-0"
+                                 :class="latestStatus === 'duplicate' ? 'border-amber-400' : 'border-emerald-500'">
+                        </template>
+                        <template x-if="!latestStudent?.avatar_url">
+                            <div class="w-11 h-11 rounded-full flex items-center justify-center font-bold text-sm text-white shadow shrink-0"
+                                 :class="latestStatus === 'duplicate' ? 'bg-amber-500' : 'bg-emerald-600'">
+                                <span x-text="latestStudent ? latestStudent.full_name.substring(0, 2).toUpperCase() : ''"></span>
+                            </div>
+                        </template>
                         <div>
                             <div class="flex items-center gap-2">
                                 <h3 class="font-black text-base leading-tight text-slate-900" x-text="latestStudent?.full_name"></h3>
@@ -380,9 +387,7 @@
                                 <tr id="attendance-row-{{ $record->student_id }}" class="hover:bg-slate-50/70 transition-colors">
                                     <td class="py-2.5 px-3">
                                         <div class="flex items-center gap-2.5">
-                                            <div class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs shrink-0">
-                                                {{ strtoupper(substr($record->student->full_name, 0, 2)) }}
-                                            </div>
+                                            <img src="{{ $record->student->avatar_url }}" alt="{{ $record->student->full_name }}" class="w-8 h-8 rounded-full object-cover border border-slate-200 shadow-xs shrink-0 bg-slate-100">
                                             <div>
                                                 <p class="font-bold text-slate-900">{{ $record->student->full_name }}</p>
                                                 <p class="text-[11px] text-slate-400 font-mono">{{ $record->student->admission_number }}</p>
@@ -974,9 +979,10 @@ function attendanceScanner() {
             tr.innerHTML = `
                 <td class="py-2.5 px-3">
                     <div class="flex items-center gap-2.5">
-                        <div class="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-xs shrink-0">
-                            ${student.full_name.substring(0, 2).toUpperCase()}
-                        </div>
+                        ${student.avatar_url 
+                            ? `<img src="${student.avatar_url}" alt="${student.full_name}" class="w-8 h-8 rounded-full object-cover border border-slate-200 shadow-xs shrink-0 bg-slate-100">`
+                            : `<div class="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-xs shrink-0">${student.full_name.substring(0, 2).toUpperCase()}</div>`
+                        }
                         <div>
                             <p class="font-bold text-slate-900">${student.full_name}</p>
                             <p class="text-[11px] text-slate-400 font-mono">${student.admission_number}</p>

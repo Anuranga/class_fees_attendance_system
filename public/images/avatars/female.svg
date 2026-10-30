@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bg-grad-female" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#EC4899" />
+      <stop offset="100%" stop-color="#8B5CF6" />
+    </linearGradient>
+    <linearGradient id="dress-grad-female" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4338CA" />
+      <stop offset="100%" stop-color="#312E81" />
+    </linearGradient>
+    <linearGradient id="hair-grad-female" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#451A03" />
+      <stop offset="100%" stop-color="#78350F" />
+    </linearGradient>
+    <filter id="soft-shadow-f" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000" flood-opacity="0.15" />
+    </filter>
+  </defs>
+
+  <!-- Circular Background -->
+  <circle cx="60" cy="60" r="58" fill="url(#bg-grad-female)" />
+  <circle cx="60" cy="60" r="54" fill="#FDF2F8" />
+
+  <!-- Back Hair -->
+  <path d="M 34 55 C 32 75, 34 92, 40 100 C 42 85, 44 70, 44 60 Z" fill="url(#hair-grad-female)" />
+  <path d="M 86 55 C 88 75, 86 92, 80 100 C 78 85, 76 70, 76 60 Z" fill="url(#hair-grad-female)" />
+
+  <!-- Body / Shoulders -->
+  <path d="M 30 114 C 30 94, 43 86, 60 86 C 77 86, 90 94, 90 114 Z" fill="url(#dress-grad-female)" />
+  <!-- Collar / Neckline -->
+  <path d="M 50 86 Q 60 96 70 86 Z" fill="#F472B6" />
+
+  <!-- Neck -->
+  <rect x="54" y="68" width="12" height="18" rx="6" fill="#FCD34D" />
+
+  <!-- Head / Face -->
+  <ellipse cx="60" cy="56" rx="19" ry="22" fill="#FDE68A" filter="url(#soft-shadow-f)" />
+
+  <!-- Ears -->
+  <circle cx="40" cy="57" r="4.5" fill="#FCD34D" />
+  <circle cx="80" cy="57" r="4.5" fill="#FCD34D" />
+  <!-- Earrings -->
+  <circle cx="40" cy="62" r="1.5" fill="#EC4899" />
+  <circle cx="80" cy="62" r="1.5" fill="#EC4899" />
+
+  <!-- Girl Hair & Bangs -->
+  <path d="M 36 50 C 36 32, 47 28, 60 28 C 73 28, 84 32, 84 50 C 84 54, 82 58, 80 62 C 77 50, 73 45, 60 45 C 47 45, 43 50, 40 62 C 38 58, 36 54, 36 50 Z" fill="url(#hair-grad-female)" />
+  <path d="M 43 45 Q 52 38 60 45" stroke="#78350F" stroke-width="2.5" stroke-linecap="round" fill="none" />
+  <path d="M 60 45 Q 68 38 77 45" stroke="#78350F" stroke-width="2.5" stroke-linecap="round" fill="none" />
+
+  <!-- Hair Clip -->
+  <circle cx="43" cy="40" r="3" fill="#EC4899" />
+  <circle cx="43" cy="40" r="1.2" fill="#FDF2F8" />
+
+  <!-- Eyes with Eyelashes -->
+  <ellipse cx="52" cy="56" rx="2.5" ry="3.2" fill="#1E293B" />
+  <ellipse cx="68" cy="56" rx="2.5" ry="3.2" fill="#1E293B" />
+  <circle cx="53" cy="55" r="1" fill="#FFFFFF" />
+  <circle cx="69" cy="55" r="1" fill="#FFFFFF" />
+  <!-- Eyelashes -->
+  <path d="M 49 53 L 47 51" stroke="#1E293B" stroke-width="1.5" stroke-linecap="round" />
+  <path d="M 71 53 L 73 51" stroke="#1E293B" stroke-width="1.5" stroke-linecap="round" />
+
+  <!-- Eyebrows -->
+  <path d="M 48 50 Q 52 47 56 49" stroke="#78350F" stroke-width="1.8" stroke-linecap="round" fill="none" />
+  <path d="M 64 49 Q 68 47 72 50" stroke="#78350F" stroke-width="1.8" stroke-linecap="round" fill="none" />
+
+  <!-- Nose -->
+  <path d="M 60 56 L 60 59 L 61.5 59" stroke="#F59E0B" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+
+  <!-- Cute Smile -->
+  <path d="M 54 64 Q 60 69 66 64" stroke="#DB2777" stroke-width="2.2" stroke-linecap="round" fill="none" />
+
+  <!-- Pink Rosy Cheeks -->
+  <ellipse cx="47" cy="61" rx="3.5" ry="2" fill="#F472B6" opacity="0.65" />
+  <ellipse cx="73" cy="61" rx="3.5" ry="2" fill="#F472B6" opacity="0.65" />
+</svg>

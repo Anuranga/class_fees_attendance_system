@@ -162,6 +162,7 @@ class AttendanceController extends Controller
                     'full_name' => $student->full_name,
                     'admission_number' => $student->admission_number,
                     'uid' => $enrollment->student_class_uid,
+                    'avatar_url' => $student->avatar_url,
                 ],
                 'attendance' => [
                     'check_in_time' => Carbon::parse($existing->check_in_time)->format('h:i:s A'),
@@ -204,6 +205,7 @@ class AttendanceController extends Controller
                 'full_name' => $student->full_name,
                 'admission_number' => $student->admission_number,
                 'uid' => $enrollment->student_class_uid,
+                'avatar_url' => $student->avatar_url,
                 'contact_number' => $student->contact_number,
                 'guardian_phone' => $student->guardian_phone,
             ],

@@ -109,9 +109,7 @@
                             <!-- Student -->
                             <td class="py-3 px-4">
                                 <div class="flex items-center gap-3">
-                                    <div class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs shrink-0">
-                                        {{ strtoupper(substr($record->student->full_name, 0, 2)) }}
-                                    </div>
+                                    <img src="{{ $record->student->avatar_url }}" alt="{{ $record->student->full_name }}" class="w-8 h-8 rounded-full object-cover border border-slate-200 shadow-xs shrink-0 bg-slate-100">
                                     <div>
                                         <p class="font-bold text-slate-900">{{ $record->student->full_name }}</p>
                                         <p class="text-[11px] text-slate-400 font-mono">{{ $record->student->admission_number }} &bull; UID: <span class="text-indigo-600">{{ $record->enrollment->student_class_uid }}</span></p>

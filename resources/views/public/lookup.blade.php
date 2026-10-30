@@ -61,9 +61,7 @@
                     @foreach($enrollments as $item)
                         <div class="rounded-2xl bg-slate-800/70 border border-slate-700/80 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-indigo-500/50 transition-all shadow-lg">
                             <div class="flex items-start gap-4">
-                                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-lg font-bold shadow shrink-0">
-                                    <i class="fa-solid fa-qrcode"></i>
-                                </div>
+                                <img src="{{ $item->student->avatar_url }}" alt="{{ $item->student->full_name }}" class="w-12 h-12 rounded-xl object-cover border border-indigo-400/40 bg-slate-900 shadow shrink-0">
                                 <div>
                                     <div class="flex items-center gap-2">
                                         <h3 class="text-base font-bold text-white">{{ $item->student->full_name }}</h3>

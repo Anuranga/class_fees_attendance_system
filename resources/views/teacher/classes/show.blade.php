@@ -5,7 +5,7 @@
 @section('page-subtitle', $classRoom->grade_level . ' • Fee: LKR ' . number_format($classRoom->monthly_fee, 2) . ' / month')
 
 @section('content')
-<div class="space-y-6" x-data="{ addStudentModal: false, editClassModal: false, manualMode: 'new' }">
+<div class="space-y-6" x-data="{ addStudentModal: false, editClassModal: false, manualMode: 'new', studentGender: 'male', photoPreview: null }">
 
     <!-- Class Header & Statistics Bar -->
     <div class="rounded-2xl bg-white border border-slate-200/80 p-6 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-6">
@@ -159,9 +159,8 @@
                             <!-- Student Details -->
                             <td class="py-3.5 px-4">
                                 <div class="flex items-center gap-3">
-                                    <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-xs shadow-xs shrink-0">
-                                        {{ strtoupper(substr($enrollment->student->full_name, 0, 2)) }}
-                                    </div>
+                                    <img src="{{ $enrollment->student->avatar_url }}" alt="{{ $enrollment->student->full_name }}" 
+                                         class="w-10 h-10 rounded-full object-cover border border-slate-200 shadow-xs shrink-0 bg-slate-100">
                                     <div>
                                         <p class="font-bold text-slate-900 text-sm">{{ $enrollment->student->full_name }}</p>
                                         <p class="text-slate-500 text-[11px] font-mono">{{ $enrollment->student->admission_number }} &bull; {{ $enrollment->student->contact_number }}</p>
@@ -284,7 +283,7 @@
                 </button>
             </div>
 
-            <form action="{{ route('teacher.classes.students.manual', $classRoom) }}" method="POST" class="p-6 space-y-4">
+            <form action="{{ route('teacher.classes.students.manual', $classRoom) }}" method="POST" enctype="multipart/form-data" class="p-6 space-y-4">
                 @csrf
                 <input type="hidden" name="mode" :value="manualMode">
 
@@ -295,6 +294,68 @@
                             <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Full Name *</label>
                             <input type="text" name="full_name" required placeholder="e.g. Liam Chen"
                                    class="w-full px-4 py-2 rounded-xl border border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 text-slate-800 text-sm">
+                        </div>
+
+                        <!-- Gender & Default Avatar Selection -->
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Gender & Avatar *</label>
+                            <div class="grid grid-cols-2 gap-3">
+                                <!-- Male Choice -->
+                                <label class="cursor-pointer border-2 rounded-xl p-3 flex items-center gap-3 transition-all"
+                                       :class="studentGender === 'male' ? 'border-indigo-600 bg-indigo-50/60 shadow-xs' : 'border-slate-200 bg-white hover:bg-slate-50'">
+                                    <input type="radio" name="gender" value="male" x-model="studentGender" class="sr-only">
+                                    <img src="{{ asset('images/avatars/male.svg') }}" alt="Boy" class="w-10 h-10 rounded-full border border-indigo-200 bg-white p-0.5 shrink-0 shadow-xs">
+                                    <div>
+                                        <p class="text-xs font-bold text-slate-900">Boy / Male</p>
+                                        <p class="text-[10px] text-slate-500">Default Avatar</p>
+                                    </div>
+                                    <i class="fa-solid fa-circle-check ml-auto text-indigo-600" x-show="studentGender === 'male'"></i>
+                                </label>
+
+                                <!-- Female Choice -->
+                                <label class="cursor-pointer border-2 rounded-xl p-3 flex items-center gap-3 transition-all"
+                                       :class="studentGender === 'female' ? 'border-pink-500 bg-pink-50/60 shadow-xs' : 'border-slate-200 bg-white hover:bg-slate-50'">
+                                    <input type="radio" name="gender" value="female" x-model="studentGender" class="sr-only">
+                                    <img src="{{ asset('images/avatars/female.svg') }}" alt="Girl" class="w-10 h-10 rounded-full border border-pink-200 bg-white p-0.5 shrink-0 shadow-xs">
+                                    <div>
+                                        <p class="text-xs font-bold text-slate-900">Girl / Female</p>
+                                        <p class="text-[10px] text-slate-500">Default Avatar</p>
+                                    </div>
+                                    <i class="fa-solid fa-circle-check ml-auto text-pink-600" x-show="studentGender === 'female'"></i>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Optional Photo / Thumbnail Upload with Live Preview -->
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Custom Photo / Thumbnail (Optional)</label>
+                            <div class="flex items-center gap-4 p-3 rounded-xl border border-dashed border-slate-300 bg-slate-50/70">
+                                <!-- Preview Image -->
+                                <div class="w-14 h-14 rounded-full overflow-hidden border-2 border-indigo-500/40 bg-white shadow-xs shrink-0 flex items-center justify-center">
+                                    <template x-if="photoPreview">
+                                        <img :src="photoPreview" class="w-full h-full object-cover">
+                                    </template>
+                                    <template x-if="!photoPreview">
+                                        <img :src="studentGender === 'female' ? '{{ asset('images/avatars/female.svg') }}' : '{{ asset('images/avatars/male.svg') }}'" class="w-full h-full object-cover">
+                                    </template>
+                                </div>
+
+                                <div class="flex-1 min-w-0">
+                                    <input type="file" name="photo" id="photo_manual" accept="image/*" class="sr-only"
+                                           @change="const file = $event.target.files[0]; if (file) { const reader = new FileReader(); reader.onload = (e) => { photoPreview = e.target.result; }; reader.readAsDataURL(file); }">
+                                    <div class="flex items-center gap-2">
+                                        <label for="photo_manual" class="px-3 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold border border-indigo-200 cursor-pointer transition-colors flex items-center gap-1.5">
+                                            <i class="fa-solid fa-camera text-indigo-600"></i>
+                                            <span>Upload Photo</span>
+                                        </label>
+                                        <button type="button" x-show="photoPreview" @click="photoPreview = null; document.getElementById('photo_manual').value = ''" 
+                                                class="text-xs text-rose-600 hover:text-rose-800 font-semibold p-1">
+                                            <i class="fa-solid fa-trash-can"></i> Clear
+                                        </button>
+                                    </div>
+                                    <p class="text-[11px] text-slate-400 mt-1">If no custom photo is added, your chosen Boy or Girl avatar is used.</p>
+                                </div>
+                            </div>
                         </div>
 
                         <div>

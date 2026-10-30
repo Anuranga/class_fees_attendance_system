@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 
 class Student extends Model
 {
@@ -14,10 +15,43 @@ class Student extends Model
     protected $fillable = [
         'admission_number',
         'full_name',
+        'gender',
+        'photo_path',
         'contact_number',
         'guardian_name',
         'guardian_phone',
     ];
+
+    protected $appends = [
+        'avatar_url',
+    ];
+
+    /**
+     * Get the student's avatar image URL.
+     * Falls back to high-res male or female vector illustration if no photo was uploaded.
+     */
+    public function getAvatarUrlAttribute(): string
+    {
+        if ($this->photo_path && Storage::disk('public')->exists($this->photo_path)) {
+            return Storage::url($this->photo_path);
+        }
+
+        if (strtolower((string) $this->gender) === 'female') {
+            return asset('images/avatars/female.svg');
+        }
+
+        return asset('images/avatars/male.svg');
+    }
+
+    public function isFemale(): bool
+    {
+        return strtolower((string) $this->gender) === 'female';
+    }
+
+    public function isMale(): bool
+    {
+        return ! $this->isFemale();
+    }
 
     public function classes(): BelongsToMany
     {

@@ -160,15 +160,24 @@ class ClassController extends Controller
         } else {
             $validated = $request->validate([
                 'full_name' => ['required', 'string', 'max:255'],
+                'gender' => ['nullable', 'string', 'in:male,female'],
+                'photo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
                 'contact_number' => ['required', 'string', 'max:30'],
                 'guardian_name' => ['required', 'string', 'max:255'],
                 'guardian_phone' => ['required', 'string', 'max:30'],
                 'admission_number' => ['nullable', 'string', 'max:50'],
             ]);
 
+            $photoPath = null;
+            if ($request->hasFile('photo') && $request->file('photo')->isValid()) {
+                $photoPath = $request->file('photo')->store('students', 'public');
+            }
+
             $student = Student::create([
-                'admission_number' => $validated['admission_number'] ?: Student::generateAdmissionNumber(),
+                'admission_number' => (! empty($validated['admission_number'])) ? $validated['admission_number'] : Student::generateAdmissionNumber(),
                 'full_name' => $validated['full_name'],
+                'gender' => $validated['gender'] ?? 'male',
+                'photo_path' => $photoPath,
                 'contact_number' => trim($validated['contact_number']),
                 'guardian_name' => $validated['guardian_name'],
                 'guardian_phone' => trim($validated['guardian_phone']),
