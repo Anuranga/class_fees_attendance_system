@@ -39,6 +39,7 @@ class ClassController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'grade_level' => ['required', 'string', 'max:100'],
+            'fee_type' => ['nullable', 'in:monthly,daily'],
             'monthly_fee' => ['required', 'numeric', 'min:0'],
             'is_registration_open' => ['nullable', 'boolean'],
         ]);
@@ -47,6 +48,7 @@ class ClassController extends Controller
             'teacher_id' => Auth::user()->effectiveTeacherId(),
             'name' => $validated['name'],
             'grade_level' => $validated['grade_level'],
+            'fee_type' => $validated['fee_type'] ?? 'monthly',
             'monthly_fee' => $validated['monthly_fee'],
             'registration_token' => Str::random(24),
             'is_registration_open' => $request->boolean('is_registration_open', true),
@@ -109,6 +111,7 @@ class ClassController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'grade_level' => ['required', 'string', 'max:100'],
+            'fee_type' => ['nullable', 'in:monthly,daily'],
             'monthly_fee' => ['required', 'numeric', 'min:0'],
             'is_registration_open' => ['nullable', 'boolean'],
         ]);
@@ -116,6 +119,7 @@ class ClassController extends Controller
         $class->update([
             'name' => $validated['name'],
             'grade_level' => $validated['grade_level'],
+            'fee_type' => $validated['fee_type'] ?? $class->fee_type,
             'monthly_fee' => $validated['monthly_fee'],
             'is_registration_open' => $request->boolean('is_registration_open'),
         ]);

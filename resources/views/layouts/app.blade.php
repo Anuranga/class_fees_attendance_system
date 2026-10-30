@@ -144,6 +144,12 @@
                         <span>Cash Collection & Fees</span>
                     </a>
 
+                    <a href="{{ route('teacher.daily.sheet') }}" 
+                       class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all {{ request()->routeIs('teacher.daily.sheet') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                        <i class="fa-solid fa-calendar-check w-5 text-center text-base text-emerald-400"></i>
+                        <span>Daily Sheet & Cash</span>
+                    </a>
+
                     @if(Auth::user()->isTeacher())
                         <a href="{{ route('teacher.assistants.index') }}" 
                            class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all {{ request()->routeIs('teacher.assistants.*') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
@@ -307,10 +313,10 @@
                             </a>
                         </div>
 
-                        <a href="{{ route('teacher.fees.index') }}" 
-                           class="flex flex-col items-center justify-center py-1 {{ request()->routeIs('teacher.fees.*') ? 'text-indigo-600 font-bold' : 'text-slate-500 hover:text-slate-800' }}">
-                            <i class="fa-solid fa-receipt text-lg"></i>
-                            <span class="text-[10px] mt-0.5 font-semibold">Fees</span>
+                        <a href="{{ route('teacher.daily.sheet') }}" 
+                           class="flex flex-col items-center justify-center py-1 {{ request()->routeIs('teacher.daily.sheet') ? 'text-indigo-600 font-bold' : 'text-slate-500 hover:text-slate-800' }}">
+                            <i class="fa-solid fa-calendar-check text-lg"></i>
+                            <span class="text-[10px] mt-0.5 font-semibold">Daily Cash</span>
                         </a>
                         <button @click="sidebarOpen = true" 
                                 class="flex flex-col items-center justify-center py-1 text-slate-500 hover:text-slate-800">

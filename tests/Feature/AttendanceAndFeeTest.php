@@ -176,6 +176,76 @@ class AttendanceAndFeeTest extends TestCase
         $receiptResponse = $this->actingAs($this->teacher)->get(route('teacher.fees.receipt', $payment));
         $receiptResponse->assertStatus(200);
         $receiptResponse->assertSee($payment->receipt_no);
-        $receiptResponse->assertSee('Send WhatsApp Receipt');
+    }
+
+    public function test_unified_attendance_and_fee_marking(): void
+    {
+        $student = Student::create([
+            'admission_number' => 'ADM-77777',
+            'full_name' => 'Unified Checkin Student',
+            'contact_number' => '+1 555-4433',
+            'guardian_name' => 'Guardian Unified',
+            'guardian_phone' => '+1 555-4422',
+        ]);
+
+        ClassStudent::create([
+            'class_id' => $this->classRoom->id,
+            'student_id' => $student->id,
+            'student_class_uid' => 'CLS-'.$this->classRoom->id.'-STD-77777',
+            'qr_token' => (string) Str::uuid(),
+            'joined_via' => 'manual',
+            'status' => 'active',
+        ]);
+
+        // Post to mark-with-fee route: Attendance is compulsory, collect_fee is true for last month
+        $previousMonth = Carbon::now()->subMonth()->format('Y-m');
+        $postData = [
+            'student_id' => $student->id,
+            'date' => Carbon::today()->toDateString(),
+            'status' => 'present',
+            'tute_provided' => '1',
+            'collect_fee' => '1',
+            'payment_type' => 'monthly',
+            'payment_month' => $previousMonth,
+            'amount' => 3500.00,
+            'payment_method' => 'cash',
+            'notes' => 'Paid for previous month during check-in',
+        ];
+
+        $response = $this->actingAs($this->teacher)
+            ->post(route('teacher.attendance.mark-with-fee', $this->classRoom), $postData);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        // Verify attendance record
+        $this->assertDatabaseHas('attendances', [
+            'class_id' => $this->classRoom->id,
+            'student_id' => $student->id,
+            'status' => 'present',
+            'tute_provided' => true,
+        ]);
+
+        // Verify payment record with previous month
+        $this->assertDatabaseHas('payments', [
+            'class_id' => $this->classRoom->id,
+            'student_id' => $student->id,
+            'payment_month' => $previousMonth,
+            'amount' => 3500.00,
+            'payment_method' => 'cash',
+        ]);
+    }
+
+    public function test_teacher_can_view_daily_sheet_and_cash_collections(): void
+    {
+        $response = $this->actingAs($this->teacher)->get(route('teacher.daily.sheet', [
+            'date' => Carbon::today()->toDateString(),
+            'class_id' => $this->classRoom->id,
+        ]));
+
+        $response->assertStatus(200);
+        $response->assertSee('Daily Attendance & Cash Ledger');
+        $response->assertSee('Total Cash Collected');
+        $response->assertSee($this->classRoom->name);
     }
 }

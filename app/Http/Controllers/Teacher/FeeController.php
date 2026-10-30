@@ -102,29 +102,41 @@ class FeeController extends Controller
      */
     public function collect(Request $request): RedirectResponse
     {
+        $paymentType = $request->input('payment_type', 'monthly');
+
         $validated = $request->validate([
             'class_id' => ['required', 'exists:classes,id'],
             'student_id' => ['required', 'exists:students,id'],
-            'payment_month' => ['required', 'regex:/^\d{4}-(0[1-9]|1[0-2])$/'],
+            'payment_type' => ['nullable', 'in:monthly,daily'],
+            'payment_month' => [$paymentType === 'daily' ? 'nullable' : 'required', 'regex:/^\d{4}-(0[1-9]|1[0-2])$/'],
             'amount' => ['required', 'numeric', 'min:0'],
             'paid_date' => ['nullable', 'date'],
             'payment_method' => ['nullable', 'string'],
             'notes' => ['nullable', 'string', 'max:500'],
         ]);
 
+        $teacherId = Auth::user()->effectiveTeacherId();
         $class = ClassRoom::findOrFail($validated['class_id']);
-        if ($class->teacher_id !== Auth::id() && ! Auth::user()->isAdmin()) {
+        if ($class->teacher_id !== $teacherId && ! Auth::user()->isAdmin()) {
             abort(403, 'Unauthorized.');
         }
 
-        // Check if student already paid for this month
-        $existing = Payment::where('class_id', $class->id)
-            ->where('student_id', $validated['student_id'])
-            ->where('payment_month', $validated['payment_month'])
-            ->first();
+        $paidDate = $validated['paid_date'] ?: Carbon::today()->toDateString();
+        $paymentMonth = $paymentType === 'daily'
+            ? Carbon::parse($paidDate)->format('Y-m')
+            : $validated['payment_month'];
 
-        if ($existing) {
-            return back()->with('error', "Fee has already been recorded for this student for month {$validated['payment_month']} (Receipt #{$existing->receipt_no}).");
+        // If monthly payment, check if student already paid for this specific month
+        if ($paymentType === 'monthly') {
+            $existing = Payment::where('class_id', $class->id)
+                ->where('student_id', $validated['student_id'])
+                ->where('payment_type', 'monthly')
+                ->where('payment_month', $paymentMonth)
+                ->first();
+
+            if ($existing) {
+                return back()->with('error', "Fee has already been recorded for this student for month {$paymentMonth} (Receipt #{$existing->receipt_no}).");
+            }
         }
 
         $receiptNo = Payment::generateReceiptNumber();
@@ -132,17 +144,19 @@ class FeeController extends Controller
         $payment = Payment::create([
             'class_id' => $class->id,
             'student_id' => $validated['student_id'],
-            'teacher_id' => Auth::id(),
+            'teacher_id' => $teacherId,
+            'collected_by' => Auth::id(),
+            'payment_type' => $paymentType,
             'amount' => $validated['amount'],
-            'payment_month' => $validated['payment_month'],
-            'paid_date' => $validated['paid_date'] ?: Carbon::today()->toDateString(),
+            'payment_month' => $paymentMonth,
+            'paid_date' => $paidDate,
             'receipt_no' => $receiptNo,
             'payment_method' => $validated['payment_method'] ?: 'cash',
-            'notes' => $validated['notes'],
+            'notes' => $validated['notes'] ?: ($paymentType === 'daily' ? "Daily session fee on {$paidDate}" : null),
         ]);
 
         return redirect()->route('teacher.fees.receipt', $payment)
-            ->with('success', "Cash payment of {$payment->amount} recorded! Receipt: {$payment->receipt_no}");
+            ->with('success', "Cash payment of LKR {$payment->amount} recorded! Receipt: {$payment->receipt_no}");
     }
 
     /**

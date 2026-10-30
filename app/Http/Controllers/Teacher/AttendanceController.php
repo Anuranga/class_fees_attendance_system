@@ -7,6 +7,7 @@ use App\Models\Attendance;
 use App\Models\ClassRoom;
 use App\Models\ClassStudent;
 use App\Models\Payment;
+use App\Models\Student;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -47,6 +48,25 @@ class AttendanceController extends Controller
         $absentCount = max(0, $totalEnrolled - ($presentCount + $lateCount));
         $rate = $totalEnrolled > 0 ? round((($presentCount + $lateCount) / $totalEnrolled) * 100, 1) : 0;
 
+        $paymentsOnDate = Payment::where('class_id', $class->id)
+            ->whereDate('paid_date', $date)
+            ->get()
+            ->keyBy('student_id');
+
+        // Recent 6 months for fee selection (including last month)
+        $recentMonths = [];
+        $cursorMonth = Carbon::now();
+        for ($i = 0; $i < 6; $i++) {
+            $key = $cursorMonth->copy()->subMonths($i)->format('Y-m');
+            $label = $cursorMonth->copy()->subMonths($i)->format('F Y');
+            if ($i === 0) {
+                $label .= ' (Current Month)';
+            } elseif ($i === 1) {
+                $label .= ' (Last Month)';
+            }
+            $recentMonths[$key] = $label;
+        }
+
         return view('teacher.attendance.index', [
             'classRoom' => $class,
             'selectedDate' => $date,
@@ -54,6 +74,8 @@ class AttendanceController extends Controller
             'enrollments' => $enrollments,
             'attendances' => $attendances,
             'attendanceMap' => $attendanceMap,
+            'paymentsOnDate' => $paymentsOnDate,
+            'recentMonths' => $recentMonths,
             'totalEnrolled' => $totalEnrolled,
             'presentCount' => $presentCount,
             'lateCount' => $lateCount,
@@ -272,6 +294,150 @@ class AttendanceController extends Controller
         $state = $attendance->tute_provided ? 'marked as Issued' : 'marked as NOT Issued';
 
         return back()->with('success', "Tutorial sheet {$state} for {$attendance->student->full_name}.");
+    }
+
+    /**
+     * Mark Attendance with optional Fee Collection in one unified modal.
+     */
+    public function markWithFee(Request $request, ClassRoom $class): RedirectResponse
+    {
+        $this->authorizeTeacher($class);
+
+        $validated = $request->validate([
+            'student_id' => ['required', 'exists:students,id'],
+            'date' => ['required', 'date'],
+            'status' => ['required', 'in:present,late'],
+            'tute_provided' => ['nullable', 'boolean'],
+            'collect_fee' => ['nullable', 'boolean'],
+            'payment_type' => ['nullable', 'in:monthly,daily'],
+            'payment_month' => ['nullable', 'regex:/^\d{4}-(0[1-9]|1[0-2])$/'],
+            'amount' => ['nullable', 'numeric', 'min:0'],
+            'payment_method' => ['nullable', 'string'],
+            'notes' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $student = Student::findOrFail($validated['student_id']);
+        $date = $validated['date'];
+        $status = $validated['status'];
+        $tuteProvided = $request->boolean('tute_provided');
+
+        // 1. Compulsory attendance mark
+        $attendance = Attendance::updateOrCreate(
+            [
+                'class_id' => $class->id,
+                'student_id' => $student->id,
+                'date' => $date,
+            ],
+            [
+                'check_in_time' => Carbon::now()->toTimeString(),
+                'status' => $status,
+                'tute_provided' => $tuteProvided,
+                'marked_by' => Auth::id(),
+            ]
+        );
+
+        $message = "Attendance marked for {$student->full_name} ({$status})";
+        if ($tuteProvided) {
+            $message .= ' with Tute handed out';
+        }
+
+        // 2. Optional fee payment
+        if ($request->boolean('collect_fee') && $request->filled('amount') && $request->input('amount') > 0) {
+            $teacherId = Auth::user()->effectiveTeacherId();
+            $paymentType = $request->input('payment_type', 'monthly');
+            $paidDate = $date;
+            $paymentMonth = $paymentType === 'daily'
+                ? Carbon::parse($paidDate)->format('Y-m')
+                : ($request->input('payment_month') ?: Carbon::now()->format('Y-m'));
+
+            // If monthly, check if already recorded
+            $alreadyPaid = false;
+            if ($paymentType === 'monthly') {
+                $alreadyPaid = Payment::where('class_id', $class->id)
+                    ->where('student_id', $student->id)
+                    ->where('payment_type', 'monthly')
+                    ->where('payment_month', $paymentMonth)
+                    ->exists();
+            }
+
+            if ($alreadyPaid) {
+                $message .= ". Note: Monthly fee for {$paymentMonth} was already marked as paid.";
+            } else {
+                $receiptNo = Payment::generateReceiptNumber();
+                $payment = Payment::create([
+                    'class_id' => $class->id,
+                    'student_id' => $student->id,
+                    'teacher_id' => $teacherId,
+                    'collected_by' => Auth::id(),
+                    'payment_type' => $paymentType,
+                    'amount' => $request->input('amount'),
+                    'payment_month' => $paymentMonth,
+                    'paid_date' => $paidDate,
+                    'receipt_no' => $receiptNo,
+                    'payment_method' => $request->input('payment_method', 'cash'),
+                    'notes' => $request->input('notes') ?: ($paymentType === 'daily' ? "Daily fee on {$paidDate}" : "Fee for {$paymentMonth}"),
+                ]);
+
+                $message .= " & Cash Payment of LKR {$payment->amount} recorded (Receipt: {$receiptNo})";
+            }
+        }
+
+        return back()->with('success', $message);
+    }
+
+    /**
+     * Daily Attendance & Cash Collection Ledger Sheet.
+     * Both teachers and assistants can filter by class and day.
+     */
+    public function dailySheet(Request $request): View
+    {
+        $teacherId = Auth::user()->effectiveTeacherId();
+        $date = $request->query('date', Carbon::today()->toDateString());
+        $selectedClassId = $request->query('class_id');
+
+        // Teacher's classes
+        $classes = ClassRoom::where('teacher_id', $teacherId)->get();
+        $classIds = $classes->pluck('id')->toArray();
+
+        // Scope to selected class or all teacher's classes
+        $filteredClassIds = $selectedClassId ? [(int) $selectedClassId] : $classIds;
+
+        // 1. Attendances for the selected date
+        $attendances = Attendance::with(['student', 'classRoom', 'markedBy'])
+            ->whereIn('class_id', $filteredClassIds)
+            ->where('date', $date)
+            ->orderBy('check_in_time', 'desc')
+            ->get();
+
+        // 2. Payments collected on this specific date
+        $payments = Payment::with(['student', 'classRoom', 'collector'])
+            ->whereIn('class_id', $filteredClassIds)
+            ->whereDate('paid_date', $date)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Total cash collected on this date
+        $dailyCashTotal = $payments->sum('amount');
+        $attendanceCount = $attendances->whereIn('status', ['present', 'late'])->count();
+        $tuteCount = $attendances->where('tute_provided', true)->count();
+        $transactionsCount = $payments->count();
+
+        // Map payments by student_id for the attendance table view
+        $paymentsByStudent = $payments->groupBy('student_id');
+
+        return view('teacher.daily.sheet', [
+            'classes' => $classes,
+            'selectedClassId' => $selectedClassId,
+            'selectedDate' => $date,
+            'isToday' => ($date === Carbon::today()->toDateString()),
+            'attendances' => $attendances,
+            'payments' => $payments,
+            'paymentsByStudent' => $paymentsByStudent,
+            'dailyCashTotal' => $dailyCashTotal,
+            'attendanceCount' => $attendanceCount,
+            'tuteCount' => $tuteCount,
+            'transactionsCount' => $transactionsCount,
+        ]);
     }
 
     protected function authorizeTeacher(ClassRoom $class): void

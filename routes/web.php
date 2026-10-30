@@ -50,7 +50,11 @@ Route::middleware(['auth', 'role:teacher'])->prefix('teacher')->name('teacher.')
     Route::get('/classes/{class}/attendance', [TeacherAttendanceController::class, 'show'])->name('attendance.show');
     Route::post('/classes/{class}/attendance/scan', [TeacherAttendanceController::class, 'scan'])->name('attendance.scan');
     Route::post('/classes/{class}/attendance/manual', [TeacherAttendanceController::class, 'manualMark'])->name('attendance.manual');
+    Route::post('/classes/{class}/attendance/mark-with-fee', [TeacherAttendanceController::class, 'markWithFee'])->name('attendance.mark-with-fee');
     Route::post('/classes/{class}/attendance/{attendance}/toggle-tute', [TeacherAttendanceController::class, 'toggleTute'])->name('attendance.toggle-tute');
+
+    // Daily Attendance & Cash Collection Ledger Sheet
+    Route::get('/daily-sheet', [TeacherAttendanceController::class, 'dailySheet'])->name('daily.sheet');
 
     // Fee Management & Cash Collections
     Route::get('/fees', [TeacherFeeController::class, 'index'])->name('fees.index');

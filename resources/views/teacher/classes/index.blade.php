@@ -47,7 +47,13 @@
                     </div>
 
                     <h3 class="text-lg font-bold text-slate-900 leading-snug">{{ $class->name }}</h3>
-                    <p class="text-xs font-semibold text-emerald-600 mt-1">LKR {{ number_format($class->monthly_fee, 2) }} <span class="text-slate-400 font-normal">/ month</span></p>
+                    <p class="text-xs font-semibold text-emerald-600 mt-1">
+                        LKR {{ number_format($class->monthly_fee, 2) }} 
+                        <span class="text-slate-400 font-normal">/ {{ $class->isDailyFee() ? 'session' : 'month' }}</span>
+                        @if($class->isDailyFee())
+                            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-purple-100 text-purple-700 ml-1">Daily Collection</span>
+                        @endif
+                    </p>
 
                     <!-- Stats Strip -->
                     <div class="mt-4 py-3 px-4 rounded-xl bg-slate-50 border border-slate-100 grid grid-cols-2 gap-2 text-center">
@@ -82,16 +88,22 @@
 
                 <!-- Action Button Cluster -->
                 <div class="mt-6 pt-4 border-t border-slate-100 flex flex-col gap-2">
-                    <div class="grid grid-cols-2 gap-2">
+                    <div class="grid grid-cols-3 gap-1.5">
                         <a href="{{ route('teacher.attendance.show', $class) }}" 
-                           class="py-2 px-3 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-bold border border-purple-200 flex items-center justify-center gap-1.5 transition-colors">
-                            <i class="fa-solid fa-qrcode text-sm"></i>
-                            <span>Scan QR</span>
+                           class="py-2 px-2 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-bold border border-purple-200 flex items-center justify-center gap-1 transition-colors" title="QR Attendance & Scanner">
+                            <i class="fa-solid fa-qrcode text-xs"></i>
+                            <span>Scan</span>
+                        </a>
+
+                        <a href="{{ route('teacher.daily.sheet', ['class_id' => $class->id]) }}" 
+                           class="py-2 px-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold border border-emerald-200 flex items-center justify-center gap-1 transition-colors" title="Daily Sheet & Cash">
+                            <i class="fa-solid fa-calendar-check text-xs"></i>
+                            <span>Daily Cash</span>
                         </a>
 
                         <a href="{{ route('teacher.classes.show', $class) }}" 
-                           class="py-2 px-3 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold border border-indigo-200 flex items-center justify-center gap-1.5 transition-colors">
-                            <i class="fa-solid fa-users text-sm"></i>
+                           class="py-2 px-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold border border-indigo-200 flex items-center justify-center gap-1 transition-colors">
+                            <i class="fa-solid fa-users text-xs"></i>
                             <span>Students</span>
                         </a>
                     </div>
@@ -162,10 +174,18 @@
                     </div>
 
                     <div>
-                        <label for="monthly_fee" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Monthly Fee (LKR) *</label>
-                        <input type="number" step="0.01" min="0" id="monthly_fee" name="monthly_fee" required placeholder="e.g. 3500.00"
-                               class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 text-slate-800 text-sm">
+                        <label for="fee_type" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Billing Model *</label>
+                        <select id="fee_type" name="fee_type" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 text-slate-800 text-sm font-semibold">
+                            <option value="monthly" selected>Monthly Fee</option>
+                            <option value="daily">Daily / Session Fee</option>
+                        </select>
                     </div>
+                </div>
+
+                <div>
+                    <label for="monthly_fee" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Fee Amount (LKR) *</label>
+                    <input type="number" step="0.01" min="0" id="monthly_fee" name="monthly_fee" required placeholder="e.g. 3500.00 or 500.00"
+                           class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 text-slate-800 text-sm">
                 </div>
 
                 <div class="pt-2">

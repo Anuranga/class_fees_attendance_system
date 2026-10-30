@@ -15,10 +15,16 @@ class ClassRoom extends Model
 
     protected $table = 'classes';
 
+    protected $attributes = [
+        'fee_type' => 'monthly',
+        'is_registration_open' => true,
+    ];
+
     protected $fillable = [
         'teacher_id',
         'name',
         'grade_level',
+        'fee_type',
         'monthly_fee',
         'registration_token',
         'is_registration_open',
@@ -28,6 +34,16 @@ class ClassRoom extends Model
         'monthly_fee' => 'decimal:2',
         'is_registration_open' => 'boolean',
     ];
+
+    public function isDailyFee(): bool
+    {
+        return $this->fee_type === 'daily';
+    }
+
+    public function isMonthlyFee(): bool
+    {
+        return $this->fee_type !== 'daily';
+    }
 
     protected static function booted()
     {

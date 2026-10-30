@@ -66,6 +66,23 @@
         </div>
     </div>
 
+    <!-- Quick Action Row: Mark Attendance & Fee + Daily Sheet -->
+    <div class="flex flex-wrap items-center justify-between gap-3">
+        <button type="button" 
+                @click="openMarkModal('', '', '{{ $classRoom->monthly_fee }}', false)"
+                class="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-md shadow-indigo-600/30 flex items-center gap-2 transition-all hover:scale-105 active:scale-95">
+            <i class="fa-solid fa-user-check"></i>
+            <span>Mark Attendance & Collect Fee</span>
+        </button>
+
+        <a href="{{ route('teacher.daily.sheet', ['class_id' => $classRoom->id, 'date' => $selectedDate]) }}" 
+           class="px-4 py-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs font-bold transition-all flex items-center gap-2 shadow-xs">
+            <i class="fa-solid fa-calendar-check text-emerald-600"></i>
+            <span>View Today's Cash & Attendance Sheet</span>
+            <i class="fa-solid fa-arrow-right text-[10px] ml-1"></i>
+        </a>
+    </div>
+
     <!-- Active Toast Banner for Scanner Feedback -->
     <div x-show="toast.show" 
          x-transition:enter="transition ease-out duration-300"
@@ -293,10 +310,12 @@
                                 <i class="fa-solid fa-circle-exclamation text-rose-600"></i>
                                 <span x-text="'Fee Due: LKR ' + latestFeeStatus?.monthly_fee"></span>
                             </span>
-                            <a :href="'{{ route('teacher.fees.index') }}?class_id={{ $classRoom->id }}'" 
-                               class="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 underline">
-                                Collect Now
-                            </a>
+                            <button type="button" 
+                                    @click="openMarkModal(latestStudent?.id, latestStudent?.full_name, latestFeeStatus?.monthly_fee, true)"
+                                    class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs transition-all flex items-center gap-1">
+                                <i class="fa-solid fa-money-bill-wave text-[10px]"></i>
+                                <span>Collect Fee Now</span>
+                            </button>
                         </div>
                     </template>
                 </div>
@@ -444,6 +463,14 @@
                             </div>
 
                             <div class="flex items-center gap-1 shrink-0">
+                                <button type="button" 
+                                        @click="openMarkModal('{{ $item->student_id }}', '{{ addslashes($item->student->full_name) }}', '{{ $classRoom->monthly_fee }}', false)"
+                                        class="px-2 py-1 rounded-md text-[11px] font-bold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 transition-colors flex items-center gap-1"
+                                        title="Check-In and Optionally Collect Fee">
+                                    <i class="fa-solid fa-receipt text-[10px]"></i>
+                                    <span>Check-In + Fee</span>
+                                </button>
+
                                 <form action="{{ route('teacher.attendance.manual', $classRoom) }}" method="POST" class="inline">
                                     @csrf
                                     <input type="hidden" name="student_id" value="{{ $item->student_id }}">
@@ -489,6 +516,155 @@
 
     </div>
 
+    <!-- Unified Mark Attendance & Collect Fee Modal -->
+    <div x-show="markModalOpen" 
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4"
+         style="display: none;">
+        
+        <div @click.away="markModalOpen = false" 
+             class="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
+            
+            <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                <div>
+                    <h3 class="text-base font-bold text-slate-900">Mark Attendance & Collect Fee</h3>
+                    <p class="text-xs text-slate-500 mt-0.5">Session: {{ $classRoom->name }} &bull; {{ \Carbon\Carbon::parse($selectedDate)->format('M d, Y') }}</p>
+                </div>
+                <button @click="markModalOpen = false" class="text-slate-400 hover:text-slate-600 p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <form action="{{ route('teacher.attendance.mark-with-fee', $classRoom) }}" method="POST" class="p-5 space-y-4">
+                @csrf
+                <input type="hidden" name="date" value="{{ $selectedDate }}">
+
+                <!-- Student Selection -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Select Student *</label>
+                    <select name="student_id" x-model="modalStudentId" required
+                            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20">
+                        <option value="">-- Choose Enrolled Student ({{ $enrollments->count() }}) --</option>
+                        @foreach($enrollments as $enr)
+                            <option value="{{ $enr->student_id }}">
+                                {{ $enr->student->full_name }} ({{ $enr->student_class_uid }} &bull; {{ $enr->student->admission_number }})
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <!-- Attendance Status & Tute Handout (Compulsory Attendance Part) -->
+                <div class="grid grid-cols-2 gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Attendance Status *</label>
+                        <select name="status" class="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs font-semibold text-slate-800">
+                            <option value="present" selected>Present (On-Time)</option>
+                            <option value="late">Late Arrival</option>
+                        </select>
+                    </div>
+
+                    <div class="flex flex-col justify-center">
+                        <label class="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-700 mt-3">
+                            <input type="checkbox" name="tute_provided" value="1" checked class="w-4 h-4 rounded text-indigo-600 border-slate-300 focus:ring-indigo-500/20">
+                            <span>Issue Tute / Material</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Fee Collection Section (Alternative / Optional) -->
+                <div class="p-4 rounded-xl border-2 transition-all" :class="modalCollectFee ? 'border-emerald-500 bg-emerald-50/20' : 'border-slate-200 bg-white'">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2.5">
+                            <i class="fa-solid fa-money-bill-wave text-lg" :class="modalCollectFee ? 'text-emerald-600' : 'text-slate-400'"></i>
+                            <div>
+                                <label class="text-xs font-extrabold text-slate-900 cursor-pointer" @click="modalCollectFee = !modalCollectFee">
+                                    Collect Fee at Check-In (Optional)
+                                </label>
+                                <p class="text-[11px] text-slate-500">Check if student is paying cash today</p>
+                            </div>
+                        </div>
+
+                        <button type="button" @click="modalCollectFee = !modalCollectFee" 
+                                class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden"
+                                :class="modalCollectFee ? 'bg-emerald-500' : 'bg-slate-300'">
+                            <span class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out"
+                                  :class="modalCollectFee ? 'translate-x-5' : 'translate-x-0'"></span>
+                        </button>
+                    </div>
+                    <input type="hidden" name="collect_fee" :value="modalCollectFee ? '1' : '0'">
+
+                    <!-- Expanded Fee Inputs -->
+                    <div x-show="modalCollectFee" class="mt-4 pt-3 border-t border-emerald-200/60 space-y-3" style="display: none;">
+                        <!-- Payment Period Toggle -->
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">Billing Period / Type</label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button type="button" @click="modalPaymentType = 'monthly'" 
+                                        :class="modalPaymentType === 'monthly' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-100 text-slate-700'"
+                                        class="py-1.5 px-3 rounded-lg text-xs transition-all">
+                                    Monthly Fee
+                                </button>
+                                <button type="button" @click="modalPaymentType = 'daily'" 
+                                        :class="modalPaymentType === 'daily' ? 'bg-emerald-600 text-white font-bold' : 'bg-slate-100 text-slate-700'"
+                                        class="py-1.5 px-3 rounded-lg text-xs transition-all">
+                                    Daily Session Fee
+                                </button>
+                            </div>
+                            <input type="hidden" name="payment_type" :value="modalPaymentType">
+                        </div>
+
+                        <!-- Monthly Billing Month Picker (Current or Last Month or Overdue) -->
+                        <div x-show="modalPaymentType === 'monthly'">
+                            <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">Select Month to Settle</label>
+                            <select name="payment_month" x-model="modalPaymentMonth" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800">
+                                @foreach($recentMonths as $mKey => $mText)
+                                    <option value="{{ $mKey }}">{{ $mText }}</option>
+                                @endforeach
+                            </select>
+                            <p class="text-[10px] text-slate-500 mt-1">If student missed paying last month, select Last Month to credit arrears.</p>
+                        </div>
+
+                        <!-- Amount & Payment Method -->
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">Amount (LKR) *</label>
+                                <input type="number" step="0.01" min="0" name="amount" x-model="modalAmount"
+                                       class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-bold text-slate-800">
+                            </div>
+
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">Payment Method</label>
+                                <select name="payment_method" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800">
+                                    <option value="cash" selected>Cash Handover</option>
+                                    <option value="bank_transfer">Bank Transfer</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <input type="text" name="notes" placeholder="Optional note (e.g. Paid in full for last month)"
+                                   class="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs text-slate-700">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+                    <button type="button" @click="markModalOpen = false" class="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 text-xs font-semibold hover:bg-slate-50">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-md shadow-indigo-600/30">
+                        Confirm Attendance & Save
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
 </div>
 @endsection
 
@@ -518,6 +694,23 @@ function attendanceScanner() {
         latestAttendance: null,
         latestFeeStatus: null,
         latestStatus: null,
+
+        // Unified Mark Attendance & Collect Fee Modal
+        markModalOpen: false,
+        modalStudentId: '',
+        modalStudentName: '',
+        modalAmount: '{{ $classRoom->monthly_fee }}',
+        modalCollectFee: false,
+        modalPaymentType: '{{ $classRoom->isDailyFee() ? "daily" : "monthly" }}',
+        modalPaymentMonth: '{{ \Carbon\Carbon::now()->format("Y-m") }}',
+
+        openMarkModal(studentId = '', studentName = '', amount = '', collectFee = false) {
+            this.modalStudentId = studentId || '';
+            this.modalStudentName = studentName || '';
+            this.modalAmount = amount || '{{ $classRoom->monthly_fee }}';
+            this.modalCollectFee = !!collectFee;
+            this.markModalOpen = true;
+        },
 
         stats: {
             total_enrolled: {{ $totalEnrolled }},

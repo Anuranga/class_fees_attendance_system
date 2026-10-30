@@ -13,10 +13,17 @@ class Payment extends Model
 
     protected $table = 'payments';
 
+    protected $attributes = [
+        'payment_type' => 'monthly',
+        'payment_method' => 'cash',
+    ];
+
     protected $fillable = [
         'class_id',
         'student_id',
         'teacher_id',
+        'payment_type',
+        'collected_by',
         'amount',
         'payment_month',
         'paid_date',
@@ -43,6 +50,21 @@ class Payment extends Model
     public function teacher(): BelongsTo
     {
         return $this->belongsTo(User::class, 'teacher_id');
+    }
+
+    public function collector(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'collected_by');
+    }
+
+    public function isDaily(): bool
+    {
+        return $this->payment_type === 'daily';
+    }
+
+    public function isMonthly(): bool
+    {
+        return $this->payment_type !== 'daily';
     }
 
     public static function generateReceiptNumber(): string
