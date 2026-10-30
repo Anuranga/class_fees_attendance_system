@@ -83,7 +83,9 @@
         <div class="rounded-xl bg-slate-50 p-4 border border-slate-100 mb-6">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                 <div class="flex items-start gap-3">
-                    <img src="{{ $payment->student->avatar_url }}" alt="{{ $payment->student->full_name }}" class="w-12 h-12 rounded-xl object-cover border border-slate-200 bg-white shadow-xs shrink-0">
+                    <img src="{{ $payment->student->avatar_url }}" alt="{{ $payment->student->full_name }}" 
+                         class="w-12 h-12 rounded-xl object-cover border border-slate-200 bg-white shadow-xs shrink-0"
+                         onerror="this.onerror=null; this.src='{{ asset('images/avatars/' . ($payment->student->gender === 'female' ? 'female.svg' : 'male.svg')) }}';">
                     <div>
                         <span class="text-slate-400 block text-[10px] font-bold uppercase">Student Details</span>
                         <p class="text-sm font-black text-slate-900">{{ $payment->student->full_name }}</p>

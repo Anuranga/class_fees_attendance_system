@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Facades\Storage;
 
 class Student extends Model
 {
@@ -32,8 +31,13 @@ class Student extends Model
      */
     public function getAvatarUrlAttribute(): string
     {
-        if ($this->photo_path && Storage::disk('public')->exists($this->photo_path)) {
-            return Storage::url($this->photo_path);
+        if (! empty($this->photo_path)) {
+            $path = ltrim($this->photo_path, '/');
+            if (str_starts_with($path, 'storage/')) {
+                $path = substr($path, 8);
+            }
+
+            return asset('storage/'.$path);
         }
 
         if (strtolower((string) $this->gender) === 'female') {

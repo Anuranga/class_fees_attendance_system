@@ -11,6 +11,7 @@ use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -161,7 +162,8 @@ class ClassController extends Controller
             $validated = $request->validate([
                 'full_name' => ['required', 'string', 'max:255'],
                 'gender' => ['nullable', 'string', 'in:male,female'],
-                'photo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
+                'photo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:10240'],
+                'photo_base64' => ['nullable', 'string'],
                 'contact_number' => ['required', 'string', 'max:30'],
                 'guardian_name' => ['required', 'string', 'max:255'],
                 'guardian_phone' => ['required', 'string', 'max:30'],
@@ -171,6 +173,20 @@ class ClassController extends Controller
             $photoPath = null;
             if ($request->hasFile('photo') && $request->file('photo')->isValid()) {
                 $photoPath = $request->file('photo')->store('students', 'public');
+            } elseif ($request->filled('photo_base64') && str_starts_with((string) $request->input('photo_base64'), 'data:image/')) {
+                $base64Data = (string) $request->input('photo_base64');
+                if (preg_match('/^data:image\/(\w+);base64,/', $base64Data, $type)) {
+                    $data = substr($base64Data, strpos($base64Data, ',') + 1);
+                    $decoded = base64_decode($data);
+                    if ($decoded !== false) {
+                        $extension = strtolower($type[1]) === 'png' ? 'png' : 'jpg';
+                        $filename = 'students/'.Str::random(40).'.'.$extension;
+                        Storage::disk('public')->put($filename, $decoded);
+                        $photoPath = $filename;
+                    }
+                }
+            } elseif ($request->hasFile('photo') && ! $request->file('photo')->isValid()) {
+                return back()->withInput()->withErrors(['photo' => 'Photo upload failed: '.$request->file('photo')->getErrorMessage()]);
             }
 
             $student = Student::create([

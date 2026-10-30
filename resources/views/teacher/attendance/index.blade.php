@@ -261,7 +261,8 @@
                         <template x-if="latestStudent?.avatar_url">
                             <img :src="latestStudent.avatar_url" :alt="latestStudent.full_name" 
                                  class="w-12 h-12 rounded-full object-cover border-2 shadow-md bg-white shrink-0"
-                                 :class="latestStatus === 'duplicate' ? 'border-amber-400' : 'border-emerald-500'">
+                                 :class="latestStatus === 'duplicate' ? 'border-amber-400' : 'border-emerald-500'"
+                                 :onerror="`this.onerror=null; this.src='${latestStudent?.gender === 'female' ? '{{ asset('images/avatars/female.svg') }}' : '{{ asset('images/avatars/male.svg') }}'}';`">
                         </template>
                         <template x-if="!latestStudent?.avatar_url">
                             <div class="w-11 h-11 rounded-full flex items-center justify-center font-bold text-sm text-white shadow shrink-0"
@@ -387,7 +388,9 @@
                                 <tr id="attendance-row-{{ $record->student_id }}" class="hover:bg-slate-50/70 transition-colors">
                                     <td class="py-2.5 px-3">
                                         <div class="flex items-center gap-2.5">
-                                            <img src="{{ $record->student->avatar_url }}" alt="{{ $record->student->full_name }}" class="w-8 h-8 rounded-full object-cover border border-slate-200 shadow-xs shrink-0 bg-slate-100">
+                                            <img src="{{ $record->student->avatar_url }}" alt="{{ $record->student->full_name }}" 
+                                                 class="w-8 h-8 rounded-full object-cover border border-slate-200 shadow-xs shrink-0 bg-slate-100"
+                                                 onerror="this.onerror=null; this.src='{{ asset('images/avatars/' . ($record->student->gender === 'female' ? 'female.svg' : 'male.svg')) }}';">
                                             <div>
                                                 <p class="font-bold text-slate-900">{{ $record->student->full_name }}</p>
                                                 <p class="text-[11px] text-slate-400 font-mono">{{ $record->student->admission_number }}</p>

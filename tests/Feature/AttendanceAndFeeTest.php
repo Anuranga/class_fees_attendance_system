@@ -324,4 +324,54 @@ class AttendanceAndFeeTest extends TestCase
         $scanResponse->assertStatus(200);
         $scanResponse->assertJsonPath('student.avatar_url', $student->avatar_url);
     }
+
+    public function test_student_can_register_via_public_link_with_photo_and_fallback_route(): void
+    {
+        Storage::fake('public');
+
+        $photo = UploadedFile::fake()->image('public_selfie.jpg', 300, 300);
+
+        $response = $this->post(route('public.join.process', $this->classRoom->registration_token), [
+            'full_name' => 'Selfie Student',
+            'gender' => 'female',
+            'photo' => $photo,
+            'contact_number' => '+1 555-7788',
+            'guardian_name' => 'Selfie Parent',
+            'guardian_phone' => '+1 555-7799',
+        ]);
+
+        $response->assertRedirect();
+        $student = Student::where('contact_number', '+1 555-7788')->first();
+        $this->assertNotNull($student);
+        $this->assertNotNull($student->photo_path);
+        Storage::disk('public')->assertExists($student->photo_path);
+
+        // Also test direct / fallback storage route
+        $filename = basename($student->photo_path);
+        $storageRouteResponse = $this->get('/storage/students/'.$filename);
+        $storageRouteResponse->assertStatus(200);
+    }
+
+    public function test_student_can_register_with_compressed_base64_photo(): void
+    {
+        Storage::fake('public');
+
+        // 1x1 transparent PNG data URI
+        $base64Png = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+
+        $response = $this->post(route('public.join.process', $this->classRoom->registration_token), [
+            'full_name' => 'Base64 Student',
+            'gender' => 'male',
+            'photo_base64' => $base64Png,
+            'contact_number' => '+1 555-8899',
+            'guardian_name' => 'Base64 Parent',
+            'guardian_phone' => '+1 555-8800',
+        ]);
+
+        $response->assertRedirect();
+        $student = Student::where('contact_number', '+1 555-8899')->first();
+        $this->assertNotNull($student);
+        $this->assertNotNull($student->photo_path);
+        Storage::disk('public')->assertExists($student->photo_path);
+    }
 }

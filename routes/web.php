@@ -9,6 +9,7 @@ use App\Http\Controllers\Teacher\ClassController as TeacherClassController;
 use App\Http\Controllers\Teacher\DashboardController as TeacherDashboardController;
 use App\Http\Controllers\Teacher\FeeController as TeacherFeeController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
 
 /*
 |--------------------------------------------------------------------------
@@ -28,6 +29,16 @@ Route::get('/join/{registration_token}', [PublicRegistrationController::class, '
 Route::post('/join/{registration_token}', [PublicRegistrationController::class, 'processJoin'])->name('public.join.process');
 Route::get('/student/pass/{qr_token}', [PublicRegistrationController::class, 'showStudentPass'])->name('public.pass');
 Route::get('/student/lookup', [PublicRegistrationController::class, 'lookup'])->name('public.lookup');
+
+// Direct / Fallback route for uploaded student photos (ensures images always display even if server symlink is missing)
+Route::get('/storage/students/{filename}', function (string $filename) {
+    $path = 'students/'.$filename;
+    if (Storage::disk('public')->exists($path)) {
+        return Storage::disk('public')->response($path);
+    }
+
+    abort(404);
+})->where('filename', '.*')->name('storage.students');
 
 /*
 |--------------------------------------------------------------------------

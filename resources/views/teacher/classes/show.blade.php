@@ -160,7 +160,8 @@
                             <td class="py-3.5 px-4">
                                 <div class="flex items-center gap-3">
                                     <img src="{{ $enrollment->student->avatar_url }}" alt="{{ $enrollment->student->full_name }}" 
-                                         class="w-10 h-10 rounded-full object-cover border border-slate-200 shadow-xs shrink-0 bg-slate-100">
+                                         class="w-10 h-10 rounded-full object-cover border border-slate-200 shadow-xs shrink-0 bg-slate-100"
+                                         onerror="this.onerror=null; this.src='{{ asset('images/avatars/' . ($enrollment->student->gender === 'female' ? 'female.svg' : 'male.svg')) }}';">
                                     <div>
                                         <p class="font-bold text-slate-900 text-sm">{{ $enrollment->student->full_name }}</p>
                                         <p class="text-slate-500 text-[11px] font-mono">{{ $enrollment->student->admission_number }} &bull; {{ $enrollment->student->contact_number }}</p>
@@ -336,24 +337,25 @@
                                         <img :src="photoPreview" class="w-full h-full object-cover">
                                     </template>
                                     <template x-if="!photoPreview">
-                                        <img :src="studentGender === 'female' ? '{{ asset('images/avatars/female.svg') }}' : '{{ asset('images/avatars/male.svg') }}'" class="w-full h-full object-cover">
+                                        <img :src="studentGender === 'female' ? '{{ asset('images/avatars/female.svg') }}' : '{{ asset('images/avatars/male.svg') }}'" class="w-full h-full object-cover" onerror="this.onerror=null; this.src='{{ asset('images/avatars/male.svg') }}';">
                                     </template>
                                 </div>
 
                                 <div class="flex-1 min-w-0">
                                     <input type="file" name="photo" id="photo_manual" accept="image/*" class="sr-only"
-                                           @change="const file = $event.target.files[0]; if (file) { const reader = new FileReader(); reader.onload = (e) => { photoPreview = e.target.result; }; reader.readAsDataURL(file); }">
+                                           @change="compressAndSetPhoto($event.target, 'photo_manual_base64', (url) => { photoPreview = url; })">
+                                    <input type="hidden" name="photo_base64" id="photo_manual_base64">
                                     <div class="flex items-center gap-2">
                                         <label for="photo_manual" class="px-3 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold border border-indigo-200 cursor-pointer transition-colors flex items-center gap-1.5">
                                             <i class="fa-solid fa-camera text-indigo-600"></i>
                                             <span>Upload Photo</span>
                                         </label>
-                                        <button type="button" x-show="photoPreview" @click="photoPreview = null; document.getElementById('photo_manual').value = ''" 
+                                        <button type="button" x-show="photoPreview" @click="photoPreview = null; document.getElementById('photo_manual').value = ''; document.getElementById('photo_manual_base64').value = '';" 
                                                 class="text-xs text-rose-600 hover:text-rose-800 font-semibold p-1">
                                             <i class="fa-solid fa-trash-can"></i> Clear
                                         </button>
                                     </div>
-                                    <p class="text-[11px] text-slate-400 mt-1">If no custom photo is added, your chosen Boy or Girl avatar is used.</p>
+                                    <p class="text-[11px] text-slate-400 mt-1">Uploaded photos are automatically optimized for fast cloud storage and display.</p>
                                 </div>
                             </div>
                         </div>
@@ -481,4 +483,71 @@
     </div>
 
 </div>
+
+<script>
+function compressAndSetPhoto(fileInput, base64InputId, previewCallback) {
+    if (!fileInput || !fileInput.files || !fileInput.files[0]) {
+        return;
+    }
+
+    const file = fileInput.files[0];
+    if (!file.type.match(/^image\//)) {
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+            const maxDim = 800;
+            let width = img.width;
+            let height = img.height;
+
+            if (width > maxDim || height > maxDim) {
+                if (width > height) {
+                    height = Math.round((height * maxDim) / width);
+                    width = maxDim;
+                } else {
+                    width = Math.round((width * maxDim) / height);
+                    height = maxDim;
+                }
+            }
+
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+            previewCallback(dataUrl);
+
+            const base64Input = document.getElementById(base64InputId);
+            if (base64Input) {
+                base64Input.value = dataUrl;
+            }
+
+            if (window.DataTransfer) {
+                canvas.toBlob(function(blob) {
+                    if (blob) {
+                        try {
+                            const compressedFile = new File([blob], 'student_photo.jpg', {
+                                type: 'image/jpeg',
+                                lastModified: Date.now()
+                            });
+                            const dt = new DataTransfer();
+                            dt.items.add(compressedFile);
+                            fileInput.files = dt.files;
+                        } catch (err) {
+                            console.warn('DataTransfer update failed:', err);
+                        }
+                    }
+                }, 'image/jpeg', 0.85);
+            }
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+</script>
 @endsection

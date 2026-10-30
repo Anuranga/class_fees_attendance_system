@@ -109,7 +109,9 @@
                             <!-- Student -->
                             <td class="py-3 px-4">
                                 <div class="flex items-center gap-3">
-                                    <img src="{{ $record->student->avatar_url }}" alt="{{ $record->student->full_name }}" class="w-8 h-8 rounded-full object-cover border border-slate-200 shadow-xs shrink-0 bg-slate-100">
+                                    <img src="{{ $record->student->avatar_url }}" alt="{{ $record->student->full_name }}" 
+                                         class="w-8 h-8 rounded-full object-cover border border-slate-200 shadow-xs shrink-0 bg-slate-100"
+                                         onerror="this.onerror=null; this.src='{{ asset('images/avatars/' . ($record->student->gender === 'female' ? 'female.svg' : 'male.svg')) }}';">
                                     <div>
                                         <p class="font-bold text-slate-900">{{ $record->student->full_name }}</p>
                                         <p class="text-[11px] text-slate-400 font-mono">{{ $record->student->admission_number }} &bull; UID: <span class="text-indigo-600">{{ $record->enrollment->student_class_uid }}</span></p>

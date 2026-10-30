@@ -76,7 +76,8 @@
                 <div class="flex-1 min-w-0 space-y-2 text-left">
                     <div class="flex items-center gap-2.5">
                         <img src="{{ $student->avatar_url }}" alt="{{ $student->full_name }}" 
-                             class="w-12 h-12 rounded-xl object-cover border-2 border-indigo-400/60 shadow-md bg-slate-800 shrink-0">
+                             class="w-12 h-12 rounded-xl object-cover border-2 border-indigo-400/60 shadow-md bg-slate-800 shrink-0"
+                             onerror="this.onerror=null; this.src='{{ asset('images/avatars/' . ($student->gender === 'female' ? 'female.svg' : 'male.svg')) }}';">
                         <div class="min-w-0">
                             <p class="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Student Name</p>
                             <p class="text-sm font-black text-white truncate leading-snug">{{ $student->full_name }}</p>

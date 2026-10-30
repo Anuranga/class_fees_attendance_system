@@ -126,24 +126,25 @@
                                 <img :src="photoPreview" class="w-full h-full object-cover">
                             </template>
                             <template x-if="!photoPreview">
-                                <img :src="gender === 'female' ? '{{ asset('images/avatars/female.svg') }}' : '{{ asset('images/avatars/male.svg') }}'" class="w-full h-full object-cover">
+                                <img :src="gender === 'female' ? '{{ asset('images/avatars/female.svg') }}' : '{{ asset('images/avatars/male.svg') }}'" class="w-full h-full object-cover" onerror="this.onerror=null; this.src='{{ asset('images/avatars/male.svg') }}';">
                             </template>
                         </div>
 
                         <div class="flex-1 min-w-0">
                             <input type="file" name="photo" id="photo_public" accept="image/*" class="sr-only"
-                                   @change="const file = $event.target.files[0]; if (file) { const reader = new FileReader(); reader.onload = (e) => { photoPreview = e.target.result; }; reader.readAsDataURL(file); }">
+                                   @change="compressAndSetPhoto($event.target, 'photo_public_base64', (url) => { photoPreview = url; })">
+                            <input type="hidden" name="photo_base64" id="photo_public_base64">
                             <div class="flex items-center gap-2">
                                 <label for="photo_public" class="px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow cursor-pointer transition-all flex items-center gap-1.5">
                                     <i class="fa-solid fa-camera"></i>
                                     <span>Take Selfie / Upload Photo</span>
                                 </label>
-                                <button type="button" x-show="photoPreview" @click="photoPreview = null; document.getElementById('photo_public').value = ''" 
+                                <button type="button" x-show="photoPreview" @click="photoPreview = null; document.getElementById('photo_public').value = ''; document.getElementById('photo_public_base64').value = '';" 
                                         class="text-xs text-rose-400 hover:text-rose-300 font-semibold p-1">
                                     <i class="fa-solid fa-trash-can"></i> Remove
                                 </button>
                             </div>
-                            <p class="text-[11px] text-slate-400 mt-1">If you don't upload a picture, your selected Boy or Girl avatar will appear on your Student ID Pass.</p>
+                            <p class="text-[11px] text-slate-400 mt-1">Camera selfies are automatically optimized for instant upload and fast pass display.</p>
                         </div>
                     </div>
                     @error('photo')
@@ -211,4 +212,71 @@
     </div>
 
 </div>
+
+<script>
+function compressAndSetPhoto(fileInput, base64InputId, previewCallback) {
+    if (!fileInput || !fileInput.files || !fileInput.files[0]) {
+        return;
+    }
+
+    const file = fileInput.files[0];
+    if (!file.type.match(/^image\//)) {
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+            const maxDim = 800;
+            let width = img.width;
+            let height = img.height;
+
+            if (width > maxDim || height > maxDim) {
+                if (width > height) {
+                    height = Math.round((height * maxDim) / width);
+                    width = maxDim;
+                } else {
+                    width = Math.round((width * maxDim) / height);
+                    height = maxDim;
+                }
+            }
+
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+            previewCallback(dataUrl);
+
+            const base64Input = document.getElementById(base64InputId);
+            if (base64Input) {
+                base64Input.value = dataUrl;
+            }
+
+            if (window.DataTransfer) {
+                canvas.toBlob(function(blob) {
+                    if (blob) {
+                        try {
+                            const compressedFile = new File([blob], 'student_photo.jpg', {
+                                type: 'image/jpeg',
+                                lastModified: Date.now()
+                            });
+                            const dt = new DataTransfer();
+                            dt.items.add(compressedFile);
+                            fileInput.files = dt.files;
+                        } catch (err) {
+                            console.warn('DataTransfer update failed:', err);
+                        }
+                    }
+                }, 'image/jpeg', 0.85);
+            }
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+</script>
 @endsection

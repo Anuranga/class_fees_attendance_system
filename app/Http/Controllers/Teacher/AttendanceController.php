@@ -160,6 +160,7 @@ class AttendanceController extends Controller
                 'student' => [
                     'id' => $student->id,
                     'full_name' => $student->full_name,
+                    'gender' => $student->gender ?? 'male',
                     'admission_number' => $student->admission_number,
                     'uid' => $enrollment->student_class_uid,
                     'avatar_url' => $student->avatar_url,
@@ -203,6 +204,7 @@ class AttendanceController extends Controller
             'student' => [
                 'id' => $student->id,
                 'full_name' => $student->full_name,
+                'gender' => $student->gender ?? 'male',
                 'admission_number' => $student->admission_number,
                 'uid' => $enrollment->student_class_uid,
                 'avatar_url' => $student->avatar_url,
