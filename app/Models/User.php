@@ -75,6 +75,11 @@ class User extends Authenticatable
         return $this->status === 'inactive';
     }
 
+    public function isPending(): bool
+    {
+        return $this->status === 'pending';
+    }
+
     public function effectiveTeacherId(): int
     {
         return $this->isAssistant() ? (int) $this->teacher_id : (int) $this->id;

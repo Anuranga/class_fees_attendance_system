@@ -35,10 +35,14 @@
                 <span class="font-bold text-lg text-white tracking-tight">EduTrack</span>
             </a>
 
-            <div class="flex items-center gap-4 text-sm font-medium">
+            <div class="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm font-medium">
                 <a href="{{ route('public.lookup') }}" class="text-slate-300 hover:text-white transition-colors flex items-center gap-1.5">
                     <i class="fa-solid fa-id-card text-xs text-indigo-400"></i>
                     <span>Find My Pass</span>
+                </a>
+                <a href="{{ route('register') }}" class="text-slate-300 hover:text-white transition-colors flex items-center gap-1.5 hidden sm:flex">
+                    <i class="fa-solid fa-user-plus text-xs text-indigo-400"></i>
+                    <span>Teacher Register</span>
                 </a>
                 <a href="{{ route('login') }}" class="px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow transition-all">
                     Staff Portal
@@ -58,6 +62,7 @@
             <span>&copy; {{ date('Y') }} EduTrack Systems. All rights reserved.</span>
             <div class="flex items-center gap-4">
                 <a href="{{ route('home') }}" class="hover:text-slate-400 transition-colors">Portal Home</a>
+                <a href="{{ route('register') }}" class="hover:text-slate-400 transition-colors">Teacher Register</a>
                 <a href="{{ route('public.lookup') }}" class="hover:text-slate-400 transition-colors">Student Lookup</a>
                 <a href="{{ route('login') }}" class="hover:text-slate-400 transition-colors">Teacher & Admin Sign In</a>
             </div>

@@ -23,6 +23,8 @@ class DashboardController extends Controller
     public function index(): View
     {
         $totalTeachers = User::where('role', 'teacher')->count();
+        $pendingTeachersCount = User::where('role', 'teacher')->where('status', 'pending')->count();
+        $pendingTeachers = User::where('role', 'teacher')->where('status', 'pending')->latest()->limit(5)->get();
         $totalClasses = ClassRoom::count();
         $totalStudents = Student::count();
         $totalEnrollments = ClassStudent::where('status', 'active')->count();
@@ -75,6 +77,8 @@ class DashboardController extends Controller
 
         return view('admin.dashboard', [
             'totalTeachers' => $totalTeachers,
+            'pendingTeachersCount' => $pendingTeachersCount,
+            'pendingTeachers' => $pendingTeachers,
             'totalClasses' => $totalClasses,
             'totalStudents' => $totalStudents,
             'totalEnrollments' => $totalEnrollments,
@@ -89,11 +93,13 @@ class DashboardController extends Controller
     }
 
     /**
-     * Teacher management page.
+     * Teacher management page with status filtering.
      */
-    public function teachers(): View
+    public function teachers(Request $request): View
     {
-        $teachers = User::where('role', 'teacher')
+        $statusFilter = $request->query('status');
+
+        $query = User::where('role', 'teacher')
             ->withCount('classes')
             ->with([
                 'classes' => function ($q) {
@@ -101,10 +107,23 @@ class DashboardController extends Controller
                 },
                 'assistants',
             ])
-            ->latest()
-            ->get();
+            ->latest();
 
-        return view('admin.teachers.index', compact('teachers'));
+        if ($statusFilter && in_array($statusFilter, ['pending', 'active', 'inactive', 'blocked'])) {
+            $query->where('status', $statusFilter);
+        }
+
+        $teachers = $query->get();
+
+        $counts = [
+            'all' => User::where('role', 'teacher')->count(),
+            'pending' => User::where('role', 'teacher')->where('status', 'pending')->count(),
+            'active' => User::where('role', 'teacher')->where('status', 'active')->count(),
+            'blocked' => User::where('role', 'teacher')->where('status', 'blocked')->count(),
+            'inactive' => User::where('role', 'teacher')->where('status', 'inactive')->count(),
+        ];
+
+        return view('admin.teachers.index', compact('teachers', 'counts', 'statusFilter'));
     }
 
     /**
@@ -131,7 +150,17 @@ class DashboardController extends Controller
     }
 
     /**
-     * Update user account status (active, inactive, blocked).
+     * Approve and activate a teacher account.
+     */
+    public function approveUser(User $user): RedirectResponse
+    {
+        $user->update(['status' => 'active']);
+
+        return back()->with('success', "Teacher account for '{$user->name}' has been approved and activated successfully!");
+    }
+
+    /**
+     * Update user account status (active, inactive, blocked, pending).
      */
     public function updateUserStatus(Request $request, User $user): RedirectResponse
     {
@@ -140,12 +169,13 @@ class DashboardController extends Controller
         }
 
         $validated = $request->validate([
-            'status' => ['required', 'in:active,inactive,blocked'],
+            'status' => ['required', 'in:active,inactive,blocked,pending'],
         ]);
 
         $user->update(['status' => $validated['status']]);
 
         $statusLabel = match ($validated['status']) {
+            'pending' => 'Pending Approval',
             'blocked' => 'Temporarily Blocked',
             'inactive' => 'Inactive',
             default => 'Active',

@@ -7,6 +7,32 @@
 @section('content')
 <div class="space-y-8">
 
+    @if($pendingTeachersCount > 0)
+        <!-- Pending Approval Alert -->
+        <div class="rounded-2xl bg-amber-500/10 border-2 border-amber-500/30 p-5 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div class="flex items-start gap-3.5">
+                <div class="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center text-lg shrink-0 shadow-sm shadow-amber-500/30">
+                    <i class="fa-solid fa-user-clock"></i>
+                </div>
+                <div>
+                    <h3 class="text-sm font-bold text-amber-950 flex items-center gap-2">
+                        <span>{{ $pendingTeachersCount }} Teacher Registration{{ $pendingTeachersCount > 1 ? 's' : '' }} Pending Approval</span>
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-200 text-amber-900 uppercase">Action Required</span>
+                    </h3>
+                    <p class="text-xs text-amber-800 mt-0.5">
+                        New instructor accounts have been registered and need administrator approval before they can access the platform.
+                    </p>
+                </div>
+            </div>
+
+            <a href="{{ route('admin.teachers.index', ['status' => 'pending']) }}" 
+               class="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold shadow-md shadow-amber-600/20 shrink-0 flex items-center gap-2 transition-all">
+                <span>Review & Approve</span>
+                <i class="fa-solid fa-arrow-right text-xs"></i>
+            </a>
+        </div>
+    @endif
+
     <!-- KPI Metric Cards Grid -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         
@@ -22,6 +48,11 @@
             </div>
             <div class="mt-4 flex items-center justify-between text-xs text-slate-500">
                 <a href="{{ route('admin.teachers.index') }}" class="text-indigo-600 hover:text-indigo-800 font-semibold">Manage Teachers &rarr;</a>
+                @if($pendingTeachersCount > 0)
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                        {{ $pendingTeachersCount }} Pending
+                    </span>
+                @endif
             </div>
         </div>
 

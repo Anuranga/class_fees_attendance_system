@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
 
 class AuthController extends Controller
@@ -18,6 +20,36 @@ class AuthController extends Controller
         }
 
         return view('auth.login');
+    }
+
+    public function showRegister(): View|RedirectResponse
+    {
+        if (Auth::check()) {
+            return Auth::user()->isAdmin()
+                ? redirect()->route('admin.dashboard')
+                : redirect()->route('teacher.dashboard');
+        }
+
+        return view('auth.register');
+    }
+
+    public function register(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
+            'password' => ['required', 'string', 'min:6', 'confirmed'],
+        ]);
+
+        User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
+            'role' => 'teacher',
+            'status' => 'pending',
+        ]);
+
+        return redirect()->route('login')->with('success', 'Your teacher account has been registered successfully! It is currently pending administrator approval before you can sign in.');
     }
 
     public function login(Request $request): RedirectResponse
@@ -37,9 +69,11 @@ class AuthController extends Controller
                 $request->session()->invalidate();
                 $request->session()->regenerateToken();
 
-                $message = $user->isBlocked()
-                    ? 'Your account has been temporarily suspended/blocked. Please contact the administrator.'
-                    : 'Your account is currently inactive. Please contact the administrator or your instructor.';
+                $message = match ($user->status) {
+                    'pending' => 'Your teacher account is pending administrator approval. Please wait for an administrator to approve and activate your account.',
+                    'blocked' => 'Your account has been temporarily suspended/blocked. Please contact the administrator.',
+                    default => 'Your account is currently inactive. Please contact the administrator or your instructor.',
+                };
 
                 return back()->withErrors(['email' => $message])->onlyInput('email');
             }

@@ -22,6 +22,8 @@ Route::get('/', function () {
 
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
+Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
+Route::post('/register', [AuthController::class, 'register'])->name('register.post');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 // Public Self-Registration & ID Pass
@@ -90,6 +92,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/teachers', [AdminDashboardController::class, 'teachers'])->name('teachers.index');
     Route::post('/teachers', [AdminDashboardController::class, 'storeTeacher'])->name('teachers.store');
     Route::post('/users/{user}/status', [AdminDashboardController::class, 'updateUserStatus'])->name('users.status');
+    Route::post('/users/{user}/approve', [AdminDashboardController::class, 'approveUser'])->name('users.approve');
     Route::delete('/users/{user}', [AdminDashboardController::class, 'destroyUser'])->name('users.destroy');
     Route::get('/payments', [AdminDashboardController::class, 'payments'])->name('payments.index');
     Route::get('/students', [AdminDashboardController::class, 'students'])->name('students.index');

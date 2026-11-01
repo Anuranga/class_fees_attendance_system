@@ -28,6 +28,11 @@
                 <span>Staff & Admin Sign In</span>
             </a>
 
+            <a href="{{ route('register') }}" class="px-6 py-3.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-indigo-300 font-semibold shadow flex items-center gap-2.5 transition-all hover:scale-105">
+                <i class="fa-solid fa-chalkboard-user"></i>
+                <span>Teacher Sign Up</span>
+            </a>
+
             <a href="{{ route('public.lookup') }}" class="px-6 py-3.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-cyan-300 font-semibold shadow flex items-center gap-2.5 transition-all hover:scale-105">
                 <i class="fa-solid fa-qrcode"></i>
                 <span>Find Student ID Pass</span>

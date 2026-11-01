@@ -16,6 +16,13 @@
     <!-- Main Login Card -->
     <div class="rounded-2xl bg-slate-800/80 border border-slate-700/80 p-8 shadow-2xl backdrop-blur-sm">
         
+        @if(session('success'))
+            <div class="mb-5 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs font-medium flex items-center gap-2">
+                <i class="fa-solid fa-circle-check"></i>
+                <span>{{ session('success') }}</span>
+            </div>
+        @endif
+
         @if(session('info'))
             <div class="mb-5 p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-300 text-xs font-medium flex items-center gap-2">
                 <i class="fa-solid fa-circle-info"></i>
@@ -80,6 +87,14 @@
                 <i class="fa-solid fa-arrow-right text-xs"></i>
             </button>
         </form>
+
+        <!-- Link to Register -->
+        <div class="mt-6 pt-5 border-t border-slate-700/60 text-center text-xs text-slate-400">
+            Are you an instructor without an account? 
+            <a href="{{ route('register') }}" class="font-bold text-indigo-400 hover:text-indigo-300 hover:underline transition-colors ml-1">
+                Register Teacher Account &rarr;
+            </a>
+        </div>
     </div>
 
 </div>

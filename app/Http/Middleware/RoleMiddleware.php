@@ -27,9 +27,13 @@ class RoleMiddleware
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
-            return redirect()->route('login')->with('error', $user->isBlocked()
-                ? 'Your account has been temporarily suspended. Please contact the administrator.'
-                : 'Your account is currently inactive.');
+            $message = match ($user->status) {
+                'pending' => 'Your teacher account is pending administrator approval. Please wait for an administrator to activate your account.',
+                'blocked' => 'Your account has been temporarily suspended. Please contact the administrator.',
+                default => 'Your account is currently inactive.',
+            };
+
+            return redirect()->route('login')->with('error', $message);
         }
 
         // 2. Enforce parent teacher status for assistants
