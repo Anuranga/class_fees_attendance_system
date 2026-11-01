@@ -5,7 +5,62 @@
 @section('page-subtitle', $classRoom->grade_level . ' • Fee: LKR ' . number_format($classRoom->monthly_fee, 2) . ' / month')
 
 @section('content')
-<div class="space-y-6" x-data="{ addStudentModal: false, editClassModal: false, manualMode: 'new', studentGender: 'male', photoPreview: null }">
+<div class="space-y-6" 
+     x-data="{ 
+         addStudentModal: false, 
+         editClassModal: false, 
+         manualMode: 'new', 
+         studentGender: 'male', 
+         photoPreview: null,
+         calendarModal: false,
+         calendarLoading: false,
+         calendarStudentId: null,
+         calendarStudentName: '',
+         calendarMonth: '{{ $currentMonth }}',
+         calendarHtml: '',
+
+         openStudentCalendar(studentId, studentName = '', month = null) {
+             this.calendarStudentId = studentId;
+             if (studentName) {
+                 this.calendarStudentName = studentName;
+             }
+             this.calendarMonth = month || this.calendarMonth || '{{ $currentMonth }}';
+             this.calendarModal = true;
+             this.calendarLoading = true;
+             this.calendarHtml = '';
+
+             fetch(`{{ url('/teacher/classes/' . $classRoom->id . '/students') }}/${studentId}/attendance?month=${this.calendarMonth}`, {
+                 headers: {
+                     'X-Requested-With': 'XMLHttpRequest',
+                     'Accept': 'application/json'
+                 }
+             })
+             .then(res => {
+                 if (!res.ok) throw new Error('HTTP ' + res.status);
+                 return res.json();
+             })
+             .then(data => {
+                 this.calendarHtml = data.html;
+                 if (data.student_name) {
+                     this.calendarStudentName = data.student_name;
+                 }
+                 this.calendarLoading = false;
+             })
+             .catch(err => {
+                 console.error(err);
+                 this.calendarHtml = '<div class=\"p-8 text-center text-rose-600\"><i class=\"fa-solid fa-triangle-exclamation text-3xl mb-2\"></i><p class=\"font-bold\">Failed to load calendar data. Please try again.</p></div>';
+                 this.calendarLoading = false;
+             });
+         }
+     }"
+     @load-student-calendar.window="openStudentCalendar($event.detail.studentId, '', $event.detail.month)"
+     x-init="
+         window.switchStudentCalendar = function(studentId, month) {
+             window.dispatchEvent(new CustomEvent('load-student-calendar', {
+                 detail: { studentId: studentId, month: month }
+             }));
+         };
+     ">
 
     <!-- Class Header & Statistics Bar -->
     <div class="rounded-2xl bg-white border border-slate-200/80 p-6 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-6">
@@ -156,14 +211,24 @@
                             $isPaid = in_array($enrollment->student_id, $paidStudentIds);
                         @endphp
                         <tr class="hover:bg-slate-50/60 transition-colors">
-                            <!-- Student Details -->
-                            <td class="py-3.5 px-4">
+                            <!-- Student Details (Clickable to view Attendance Calendar) -->
+                            <td class="py-3.5 px-4 cursor-pointer group"
+                                @click="openStudentCalendar({{ $enrollment->student_id }}, '{{ addslashes($enrollment->student->full_name) }}')"
+                                title="Click to view {{ $enrollment->student->full_name }}'s Attendance Calendar">
                                 <div class="flex items-center gap-3">
-                                    <img src="{{ $enrollment->student->avatar_url }}" alt="{{ $enrollment->student->full_name }}" 
-                                         class="w-10 h-10 rounded-full object-cover border border-slate-200 shadow-xs shrink-0 bg-slate-100"
-                                         onerror="this.onerror=null; this.src='{{ asset('images/avatars/' . ($enrollment->student->gender === 'female' ? 'female.svg' : 'male.svg')) }}';">
+                                    <div class="relative shrink-0">
+                                        <img src="{{ $enrollment->student->avatar_url }}" alt="{{ $enrollment->student->full_name }}" 
+                                             class="w-10 h-10 rounded-full object-cover border border-slate-200 shadow-xs group-hover:ring-2 group-hover:ring-indigo-500 group-hover:scale-105 transition-all bg-slate-100"
+                                             onerror="this.onerror=null; this.src='{{ asset('images/avatars/' . ($enrollment->student->gender === 'female' ? 'female.svg' : 'male.svg')) }}';">
+                                        <span class="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full flex items-center justify-center text-[8px] bg-emerald-600 text-white shadow-xs">
+                                            <i class="fa-regular fa-calendar-days"></i>
+                                        </span>
+                                    </div>
                                     <div>
-                                        <p class="font-bold text-slate-900 text-sm">{{ $enrollment->student->full_name }}</p>
+                                        <div class="flex items-center gap-1.5">
+                                            <p class="font-bold text-slate-900 text-sm group-hover:text-indigo-600 transition-colors">{{ $enrollment->student->full_name }}</p>
+                                            <i class="fa-regular fa-calendar text-[11px] text-slate-400 group-hover:text-indigo-600 transition-colors"></i>
+                                        </div>
                                         <p class="text-slate-500 text-[11px] font-mono">{{ $enrollment->student->admission_number }} &bull; {{ $enrollment->student->contact_number }}</p>
                                     </div>
                                 </div>
@@ -211,6 +276,15 @@
                             <!-- Actions -->
                             <td class="py-3.5 px-4 text-right">
                                 <div class="flex items-center justify-end gap-1.5">
+                                    <!-- View Attendance Calendar Button -->
+                                    <button type="button"
+                                            @click="openStudentCalendar({{ $enrollment->student_id }}, '{{ addslashes($enrollment->student->full_name) }}')"
+                                            class="px-2.5 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-xs border border-emerald-200 transition-colors flex items-center gap-1.5 shadow-2xs"
+                                            title="View Attendance Calendar">
+                                        <i class="fa-regular fa-calendar-days text-emerald-600"></i>
+                                        <span>Attendance</span>
+                                    </button>
+
                                     <!-- Print ID Pass -->
                                     <a href="{{ route('public.pass', $enrollment->qr_token) }}" target="_blank"
                                        class="px-2.5 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs border border-indigo-200 transition-colors flex items-center gap-1"
@@ -479,6 +553,70 @@
                     <button type="submit" class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-md shadow-indigo-600/30">Save Changes</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Student Attendance Calendar Modal -->
+    <div x-show="calendarModal" 
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         @keydown.escape.window="calendarModal = false"
+         class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6"
+         style="display: none;">
+        
+        <div @click.away="calendarModal = false" 
+             class="w-full max-w-5xl bg-slate-50 rounded-3xl shadow-2xl border border-slate-200 overflow-hidden my-auto max-h-[92vh] flex flex-col">
+            
+            <!-- Modal Top Header Bar -->
+            <div class="px-5 py-3.5 border-b border-slate-200/80 flex items-center justify-between bg-white shrink-0">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm font-bold border border-indigo-200/80">
+                        <i class="fa-regular fa-calendar-days"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm sm:text-base font-extrabold text-slate-900 flex items-center gap-2">
+                            <span>Attendance Calendar</span>
+                            <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700" x-text="calendarStudentName"></span>
+                        </h3>
+                        <p class="text-[11px] text-slate-500">Student session attendance, punctuality & fee records</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <template x-if="calendarStudentId">
+                        <a :href="'{{ url('/teacher/classes/' . $classRoom->id . '/students') }}/' + calendarStudentId + '/attendance?month=' + calendarMonth"
+                           target="_blank"
+                           class="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold border border-slate-200 flex items-center gap-1.5 transition-colors shadow-2xs"
+                           title="Open full page view in a new tab">
+                            <i class="fa-solid fa-arrow-up-right-from-square text-indigo-600"></i>
+                            <span class="hidden sm:inline">Open Full Page</span>
+                        </a>
+                    </template>
+
+                    <button @click="calendarModal = false" 
+                            class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 flex items-center justify-center transition-colors"
+                            title="Close Calendar">
+                        <i class="fa-solid fa-xmark text-sm"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Modal Body with Scroll -->
+            <div class="p-4 sm:p-6 overflow-y-auto flex-1">
+                <!-- Loading State Spinner -->
+                <div x-show="calendarLoading" class="py-20 text-center">
+                    <div class="inline-block w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mb-3"></div>
+                    <p class="text-sm font-bold text-slate-800">Loading Attendance Calendar...</p>
+                    <p class="text-xs text-slate-400 mt-1">Retrieving daily check-ins and fee status</p>
+                </div>
+
+                <!-- Loaded Dynamic HTML Content -->
+                <div x-show="!calendarLoading" x-html="calendarHtml"></div>
+            </div>
         </div>
     </div>
 

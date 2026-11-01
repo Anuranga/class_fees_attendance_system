@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Teacher;
 
 use App\Http\Controllers\Controller;
+use App\Models\Attendance;
 use App\Models\ClassRoom;
 use App\Models\ClassStudent;
 use App\Models\Payment;
 use App\Models\Student;
 use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -236,6 +238,230 @@ class ClassController extends Controller
             ->delete();
 
         return back()->with('success', "Student {$student->full_name} was removed from this class.");
+    }
+
+    /**
+     * Display student attendance details and interactive monthly calendar.
+     */
+    public function studentAttendance(Request $request, ClassRoom $class, Student $student): View|JsonResponse
+    {
+        $this->authorizeTeacher($class);
+
+        // Verify student enrollment in this specific class
+        $enrollment = ClassStudent::with(['classRoom', 'student'])
+            ->where('class_id', $class->id)
+            ->where('student_id', $student->id)
+            ->firstOrFail();
+
+        $monthParam = $request->query('month', Carbon::now()->format('Y-m'));
+        try {
+            $monthCarbon = Carbon::createFromFormat('Y-m', $monthParam)->startOfMonth();
+        } catch (\Exception $e) {
+            $monthCarbon = Carbon::now()->startOfMonth();
+            $monthParam = $monthCarbon->format('Y-m');
+        }
+
+        $startDate = $monthCarbon->copy()->startOfMonth();
+        $endDate = $monthCarbon->copy()->endOfMonth();
+        $today = Carbon::today()->toDateString();
+
+        // All active students enrolled in this class for fast switcher
+        $allClassStudents = ClassStudent::with('student')
+            ->where('class_id', $class->id)
+            ->where('status', 'active')
+            ->get()
+            ->sortBy(fn ($e) => strtolower($e->student->full_name))
+            ->values();
+
+        // 1. All class session dates conducted for this class during this month
+        $classSessionDates = Attendance::where('class_id', $class->id)
+            ->whereBetween('date', [$startDate->toDateString(), $endDate->toDateString()])
+            ->distinct()
+            ->pluck('date')
+            ->map(fn ($d) => Carbon::parse($d)->toDateString())
+            ->unique()
+            ->values()
+            ->toArray();
+
+        // 2. Attendance records for this student in this class during this month
+        $studentAttendances = Attendance::with('markedBy')
+            ->where('class_id', $class->id)
+            ->where('student_id', $student->id)
+            ->whereBetween('date', [$startDate->toDateString(), $endDate->toDateString()])
+            ->get()
+            ->keyBy(fn ($att) => Carbon::parse($att->date)->toDateString());
+
+        // 3. Fee payments
+        $monthlyPayment = Payment::where('class_id', $class->id)
+            ->where('student_id', $student->id)
+            ->where('payment_month', $monthParam)
+            ->first();
+
+        $paymentsOnDates = Payment::where('class_id', $class->id)
+            ->where('student_id', $student->id)
+            ->whereBetween('paid_date', [$startDate->toDateString(), $endDate->toDateString()])
+            ->get()
+            ->groupBy(fn ($p) => Carbon::parse($p->paid_date)->toDateString());
+
+        // 4. Statistics calculation
+        $totalSessionsHeld = count($classSessionDates);
+        $presentCount = $studentAttendances->where('status', 'present')->count();
+        $lateCount = $studentAttendances->where('status', 'late')->count();
+        $attendedCount = $presentCount + $lateCount;
+
+        $missedSessions = 0;
+        foreach ($classSessionDates as $sessionDate) {
+            if (! $studentAttendances->has($sessionDate)) {
+                $missedSessions++;
+            } elseif ($studentAttendances->get($sessionDate)->status === 'absent') {
+                $missedSessions++;
+            }
+        }
+
+        $attendanceRate = $totalSessionsHeld > 0 ? round(($attendedCount / $totalSessionsHeld) * 100, 1) : 0;
+        $tutesCount = $studentAttendances->where('tute_provided', true)->count();
+
+        // All-time attendance rate for this student in this class
+        $allTimeSessions = Attendance::where('class_id', $class->id)
+            ->distinct()
+            ->pluck('date')
+            ->count();
+
+        $allTimeAttended = Attendance::where('class_id', $class->id)
+            ->where('student_id', $student->id)
+            ->whereIn('status', ['present', 'late'])
+            ->count();
+
+        $allTimeRate = $allTimeSessions > 0 ? round(($allTimeAttended / $allTimeSessions) * 100, 1) : 0;
+
+        // 5. Build Calendar Days (Mon - Sun, ISO 8601: Mon=1, Sun=7)
+        $firstDayOfWeekIso = $startDate->dayOfWeekIso;
+        $leadingCount = $firstDayOfWeekIso - 1;
+        $prevMonthEnd = $startDate->copy()->subDay();
+
+        $calendarDays = [];
+
+        // Preceding days from previous month
+        for ($i = $leadingCount - 1; $i >= 0; $i--) {
+            $pDate = $prevMonthEnd->copy()->subDays($i);
+            $calendarDays[] = [
+                'day' => $pDate->day,
+                'date' => $pDate->toDateString(),
+                'is_current_month' => false,
+                'is_today' => false,
+                'is_future' => true,
+                'session_held' => false,
+                'status' => 'outside',
+                'attendance' => null,
+                'payments' => [],
+            ];
+        }
+
+        // Current month days
+        for ($d = 1; $d <= $startDate->daysInMonth; $d++) {
+            $dateObj = $startDate->copy()->day($d);
+            $dateStr = $dateObj->toDateString();
+            $isToday = ($dateStr === $today);
+            $isFuture = $dateObj->isFuture();
+            $sessionHeld = in_array($dateStr, $classSessionDates);
+            $attendance = $studentAttendances->get($dateStr);
+            $payments = $paymentsOnDates->get($dateStr, collect());
+
+            $status = 'no_class';
+            if ($attendance) {
+                $status = $attendance->status; // 'present', 'late', 'absent'
+            } elseif ($sessionHeld) {
+                $status = 'missed';
+            }
+
+            $calendarDays[] = [
+                'day' => $d,
+                'date' => $dateStr,
+                'day_name' => $dateObj->format('D'),
+                'is_current_month' => true,
+                'is_today' => $isToday,
+                'is_future' => $isFuture,
+                'session_held' => $sessionHeld,
+                'status' => $status,
+                'attendance' => $attendance ? [
+                    'id' => $attendance->id,
+                    'check_in_time' => Carbon::parse($attendance->check_in_time)->format('h:i A'),
+                    'status' => $attendance->status,
+                    'tute_provided' => (bool) $attendance->tute_provided,
+                    'tute_name' => $attendance->tute_name,
+                    'marked_by' => $attendance->markedBy?->name ?? 'System',
+                ] : null,
+                'payments' => $payments->map(fn ($p) => [
+                    'id' => $p->id,
+                    'amount' => (float) $p->amount,
+                    'receipt_no' => $p->receipt_no,
+                    'fee_type' => $p->payment_type ?? 'monthly',
+                ])->values()->toArray(),
+            ];
+        }
+
+        // Trailing days from next month
+        $trailingCount = (7 - (count($calendarDays) % 7)) % 7;
+        for ($j = 1; $j <= $trailingCount; $j++) {
+            $nDate = $endDate->copy()->addDays($j);
+            $calendarDays[] = [
+                'day' => $nDate->day,
+                'date' => $nDate->toDateString(),
+                'is_current_month' => false,
+                'is_today' => false,
+                'is_future' => true,
+                'session_held' => false,
+                'status' => 'outside',
+                'attendance' => null,
+                'payments' => [],
+            ];
+        }
+
+        $prevMonth = $monthCarbon->copy()->subMonth()->format('Y-m');
+        $nextMonth = $monthCarbon->copy()->addMonth()->format('Y-m');
+        $monthLabel = $monthCarbon->format('F Y');
+
+        // Detailed session logs
+        $monthlyLogs = Attendance::with('markedBy')
+            ->where('class_id', $class->id)
+            ->where('student_id', $student->id)
+            ->whereBetween('date', [$startDate->toDateString(), $endDate->toDateString()])
+            ->orderBy('date', 'desc')
+            ->get();
+
+        $data = [
+            'classRoom' => $class,
+            'student' => $student,
+            'enrollment' => $enrollment,
+            'allClassStudents' => $allClassStudents,
+            'currentMonth' => $monthParam,
+            'monthLabel' => $monthLabel,
+            'prevMonth' => $prevMonth,
+            'nextMonth' => $nextMonth,
+            'calendarDays' => $calendarDays,
+            'totalSessionsHeld' => $totalSessionsHeld,
+            'presentCount' => $presentCount,
+            'lateCount' => $lateCount,
+            'missedSessions' => $missedSessions,
+            'attendedCount' => $attendedCount,
+            'attendanceRate' => $attendanceRate,
+            'allTimeSessions' => $allTimeSessions,
+            'allTimeAttended' => $allTimeAttended,
+            'allTimeRate' => $allTimeRate,
+            'tutesCount' => $tutesCount,
+            'monthlyPayment' => $monthlyPayment,
+            'monthlyLogs' => $monthlyLogs,
+        ];
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'html' => view('teacher.classes.partials.student-calendar-card', $data)->render(),
+                'student_name' => $student->full_name,
+                'month_label' => $monthLabel,
+            ]);
+        }
+
+        return view('teacher.classes.student-attendance', $data);
     }
 
     /**
