@@ -6,61 +6,8 @@
 
 @section('content')
 <div class="space-y-6" 
-     x-data="{ 
-         addStudentModal: false, 
-         editClassModal: false, 
-         manualMode: 'new', 
-         studentGender: 'male', 
-         photoPreview: null,
-         calendarModal: false,
-         calendarLoading: false,
-         calendarStudentId: null,
-         calendarStudentName: '',
-         calendarMonth: '{{ $currentMonth }}',
-         calendarHtml: '',
-
-         openStudentCalendar(studentId, studentName = '', month = null) {
-             this.calendarStudentId = studentId;
-             if (studentName) {
-                 this.calendarStudentName = studentName;
-             }
-             this.calendarMonth = month || this.calendarMonth || '{{ $currentMonth }}';
-             this.calendarModal = true;
-             this.calendarLoading = true;
-             this.calendarHtml = '';
-
-             fetch(`{{ url('/teacher/classes/' . $classRoom->id . '/students') }}/${studentId}/attendance?month=${this.calendarMonth}`, {
-                 headers: {
-                     'X-Requested-With': 'XMLHttpRequest',
-                     'Accept': 'application/json'
-                 }
-             })
-             .then(res => {
-                 if (!res.ok) throw new Error('HTTP ' + res.status);
-                 return res.json();
-             })
-             .then(data => {
-                 this.calendarHtml = data.html;
-                 if (data.student_name) {
-                     this.calendarStudentName = data.student_name;
-                 }
-                 this.calendarLoading = false;
-             })
-             .catch(err => {
-                 console.error(err);
-                 this.calendarHtml = '<div class=\"p-8 text-center text-rose-600\"><i class=\"fa-solid fa-triangle-exclamation text-3xl mb-2\"></i><p class=\"font-bold\">Failed to load calendar data. Please try again.</p></div>';
-                 this.calendarLoading = false;
-             });
-         }
-     }"
-     @load-student-calendar.window="openStudentCalendar($event.detail.studentId, '', $event.detail.month)"
-     x-init="
-         window.switchStudentCalendar = function(studentId, month) {
-             window.dispatchEvent(new CustomEvent('load-student-calendar', {
-                 detail: { studentId: studentId, month: month }
-             }));
-         };
-     ">
+     x-data="classDetailsManager()"
+     @load-student-calendar.window="openStudentCalendar($event.detail.studentId, '', $event.detail.month)">
 
     <!-- Class Header & Statistics Bar -->
     <div class="rounded-2xl bg-white border border-slate-200/80 p-6 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-6">
@@ -623,6 +570,62 @@
 </div>
 
 <script>
+function classDetailsManager() {
+    return {
+        addStudentModal: false,
+        editClassModal: false,
+        manualMode: 'new',
+        studentGender: 'male',
+        photoPreview: null,
+        calendarModal: false,
+        calendarLoading: false,
+        calendarStudentId: null,
+        calendarStudentName: '',
+        calendarMonth: '{{ $currentMonth }}',
+        calendarHtml: '',
+
+        openStudentCalendar(studentId, studentName = '', month = null) {
+            this.calendarStudentId = studentId;
+            if (studentName) {
+                this.calendarStudentName = studentName;
+            }
+            this.calendarMonth = month || this.calendarMonth || '{{ $currentMonth }}';
+            this.calendarModal = true;
+            this.calendarLoading = true;
+            this.calendarHtml = '';
+
+            fetch(`{{ url('/teacher/classes/' . $classRoom->id . '/students') }}/${studentId}/attendance?month=${this.calendarMonth}`, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            })
+            .then(res => {
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                return res.json();
+            })
+            .then(data => {
+                this.calendarHtml = data.html;
+                if (data.student_name) {
+                    this.calendarStudentName = data.student_name;
+                }
+                this.calendarLoading = false;
+            })
+            .catch(err => {
+                console.error(err);
+                this.calendarHtml = '<div class="p-8 text-center text-rose-600"><i class="fa-solid fa-triangle-exclamation text-3xl mb-2"></i><p class="font-bold">Failed to load calendar data. Please try again.</p></div>';
+                this.calendarLoading = false;
+            });
+        }
+    };
+}
+
+window.switchStudentCalendar = function(studentId, month) {
+    window.dispatchEvent(new CustomEvent('load-student-calendar', {
+        detail: { studentId: studentId, month: month }
+    }));
+};
+
 function compressAndSetPhoto(fileInput, base64InputId, previewCallback) {
     if (!fileInput || !fileInput.files || !fileInput.files[0]) {
         return;
