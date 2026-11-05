@@ -146,8 +146,8 @@ class PublicRegistrationController extends Controller
 
         // Render QR Code as SVG string
         $qrCodeSvg = QrCode::size(200)
-            ->style('round')
-            ->margin(1)
+            ->style('square')
+            ->margin(0)
             ->generate($enrollment->qr_token);
 
         return view('public.pass', [

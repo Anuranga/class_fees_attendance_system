@@ -79,6 +79,7 @@ Route::middleware(['auth', 'role:teacher'])->prefix('teacher')->name('teacher.')
     // Teaching Assistants Management
     Route::get('/assistants', [TeacherAssistantController::class, 'index'])->name('assistants.index');
     Route::post('/assistants', [TeacherAssistantController::class, 'store'])->name('assistants.store');
+    Route::put('/assistants/{assistant}/classes', [TeacherAssistantController::class, 'updateClasses'])->name('assistants.update-classes');
     Route::post('/assistants/{assistant}/toggle-status', [TeacherAssistantController::class, 'toggleStatus'])->name('assistants.toggle-status');
     Route::delete('/assistants/{assistant}', [TeacherAssistantController::class, 'destroy'])->name('assistants.destroy');
 });

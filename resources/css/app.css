@@ -31,20 +31,29 @@
     background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
 }
 
-/* ID Card dimensions (CR80 standard) */
+/* ID Card dimensions (3.7" x 2.6" horizontal card standard) */
 .id-card-container {
-    width: 3.375in;
-    min-height: 2.125in;
+    width: 3.7in;
+    height: 2.6in;
     box-sizing: border-box;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
 }
 
 /* Print Specific Optimizations */
 @media print {
+    @page {
+        size: 3.7in 2.6in;
+        margin: 0;
+    }
+
     body {
         background: white !important;
         color: black !important;
         margin: 0 !important;
         padding: 0 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
     }
     
     .no-print {
@@ -55,11 +64,24 @@
         display: block !important;
     }
 
+    main {
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
     .id-card-print-area {
         margin: 0 auto !important;
+        padding: 0 !important;
         page-break-inside: avoid;
+        break-inside: avoid;
+    }
+
+    .id-card-container {
+        width: 3.7in !important;
+        height: 2.6in !important;
         box-shadow: none !important;
-        border: 1px solid #ccc !important;
+        border: 1px dashed #cbd5e1 !important;
+        margin: 0 auto !important;
     }
 
     .receipt-print-area {

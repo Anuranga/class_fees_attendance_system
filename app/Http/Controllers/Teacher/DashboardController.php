@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Teacher;
 
 use App\Http\Controllers\Controller;
 use App\Models\Attendance;
-use App\Models\ClassRoom;
 use App\Models\ClassStudent;
 use App\Models\Payment;
 use Carbon\Carbon;
@@ -20,8 +19,8 @@ class DashboardController extends Controller
         $teacher = $user->effectiveTeacher() ?? $user;
         $teacherId = $user->effectiveTeacherId();
 
-        // Teacher's classes
-        $classes = ClassRoom::where('teacher_id', $teacherId)->get();
+        // Teacher's classes (or assistant's assigned classes)
+        $classes = $user->accessibleClassesQuery()->get();
         $classIds = $classes->pluck('id')->toArray();
 
         // 1. KPI Cards
@@ -32,7 +31,7 @@ class DashboardController extends Controller
             ->count();
 
         $currentMonth = Carbon::now()->format('Y-m');
-        $currentMonthRevenue = Payment::where('teacher_id', $teacherId)
+        $currentMonthRevenue = Payment::whereIn('class_id', $classIds)
             ->where('payment_month', $currentMonth)
             ->sum('amount');
 
@@ -53,14 +52,14 @@ class DashboardController extends Controller
             $monthsTrend[] = $mKey;
             $monthsLabels[] = $monthObj->format('M Y');
 
-            $sum = Payment::where('teacher_id', $teacherId)
+            $sum = Payment::whereIn('class_id', $classIds)
                 ->where('payment_month', $mKey)
                 ->sum('amount');
             $monthlyCollections[] = (float) $sum;
         }
 
         // 3. Chart 2: Paid vs. Unpaid student ratio for active month
-        $paidStudentIds = Payment::where('teacher_id', $teacherId)
+        $paidStudentIds = Payment::whereIn('class_id', $classIds)
             ->where('payment_month', $currentMonth)
             ->pluck('student_id')
             ->unique();
@@ -118,7 +117,7 @@ class DashboardController extends Controller
 
         // Recent 5 payments
         $recentPayments = Payment::with(['student', 'classRoom'])
-            ->where('teacher_id', $teacherId)
+            ->whereIn('class_id', $classIds)
             ->latest()
             ->limit(5)
             ->get();

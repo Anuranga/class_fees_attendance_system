@@ -20,15 +20,21 @@ class FeeController extends Controller
      */
     public function index(Request $request): View
     {
-        $teacherId = Auth::user()->effectiveTeacherId();
-        $classes = ClassRoom::where('teacher_id', $teacherId)->get();
+        $user = Auth::user();
+        $classes = $user->accessibleClassesQuery()->get();
         $classIds = $classes->pluck('id')->toArray();
 
         $selectedClassId = $request->query('class_id');
         $selectedMonth = $request->query('month', Carbon::now()->format('Y-m'));
         $selectedStatus = $request->query('status', 'all'); // 'all', 'paid', 'pending'
 
-        $targetClassIds = $selectedClassId ? [(int) $selectedClassId] : $classIds;
+        if ($selectedClassId && in_array((int) $selectedClassId, $classIds, true)) {
+            $targetClassIds = [(int) $selectedClassId];
+        } elseif ($selectedClassId) {
+            abort(403, 'Unauthorized. You do not have access to this class.');
+        } else {
+            $targetClassIds = $classIds;
+        }
 
         // Query active enrollments for target classes
         $enrollmentsQuery = ClassStudent::with(['classRoom', 'student'])
@@ -74,9 +80,9 @@ class FeeController extends Controller
         $paidCount = $payments->count();
         $pendingCount = max(0, $enrollments->count() - $paidCount);
 
-        // Recent 10 recorded payments
+        // Recent 10 recorded payments (scoped to accessible classes)
         $recentPayments = Payment::with(['student', 'classRoom'])
-            ->where('teacher_id', $teacherId)
+            ->whereIn('class_id', $classIds)
             ->latest()
             ->limit(10)
             ->get();
@@ -117,7 +123,7 @@ class FeeController extends Controller
 
         $teacherId = Auth::user()->effectiveTeacherId();
         $class = ClassRoom::findOrFail($validated['class_id']);
-        if ($class->teacher_id !== $teacherId && ! Auth::user()->isAdmin()) {
+        if (! Auth::user()->canAccessClass($class)) {
             abort(403, 'Unauthorized.');
         }
 
@@ -166,6 +172,10 @@ class FeeController extends Controller
     {
         $payment->load(['classRoom.teacher', 'student']);
 
+        if (! Auth::user()->canAccessClass($payment->classRoom)) {
+            abort(403, 'Unauthorized.');
+        }
+
         // Format pre-filled WhatsApp & SMS message
         $studentName = $payment->student->full_name;
         $className = $payment->classRoom->name;
@@ -197,7 +207,7 @@ class FeeController extends Controller
      */
     public function destroy(Payment $payment): RedirectResponse
     {
-        if ($payment->teacher_id !== Auth::user()->effectiveTeacherId() && ! Auth::user()->isAdmin()) {
+        if (! Auth::user()->canAccessClass($payment->classRoom)) {
             abort(403, 'Unauthorized.');
         }
 

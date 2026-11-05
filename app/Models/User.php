@@ -3,8 +3,10 @@
 namespace App\Models;
 
 use Database\Factories\UserFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -103,6 +105,57 @@ class User extends Authenticatable
     public function classes(): HasMany
     {
         return $this->hasMany(ClassRoom::class, 'teacher_id');
+    }
+
+    public function assignedClasses(): BelongsToMany
+    {
+        return $this->belongsToMany(ClassRoom::class, 'assistant_class', 'user_id', 'class_id')
+            ->withTimestamps();
+    }
+
+    /**
+     * Get the Eloquent query builder for classes this user is allowed to access.
+     */
+    public function accessibleClassesQuery(): Builder
+    {
+        if ($this->isAssistant()) {
+            $assignedIds = $this->assignedClasses()->pluck('classes.id')->toArray();
+
+            return ClassRoom::where('teacher_id', $this->effectiveTeacherId())
+                ->whereIn('classes.id', $assignedIds);
+        }
+
+        return ClassRoom::where('teacher_id', $this->effectiveTeacherId());
+    }
+
+    /**
+     * Get the array of class IDs this user is allowed to access.
+     *
+     * @return array<int, int>
+     */
+    public function accessibleClassIds(): array
+    {
+        return $this->accessibleClassesQuery()->pluck('classes.id')->toArray();
+    }
+
+    /**
+     * Determine whether this user can access a specific class.
+     */
+    public function canAccessClass(ClassRoom $class): bool
+    {
+        if ($this->isAdmin()) {
+            return true;
+        }
+
+        if ($class->teacher_id !== $this->effectiveTeacherId()) {
+            return false;
+        }
+
+        if ($this->isAssistant()) {
+            return $this->assignedClasses()->where('classes.id', $class->id)->exists();
+        }
+
+        return true;
     }
 
     public function payments(): HasMany

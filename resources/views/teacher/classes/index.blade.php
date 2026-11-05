@@ -14,11 +14,13 @@
             <p class="text-xs text-slate-500">Each class has an isolated student register, QR session scanner, and dedicated fee ledger</p>
         </div>
 
-        <button @click="createModalOpen = true" 
-                class="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-md shadow-indigo-600/30 flex items-center justify-center gap-2 transition-all">
-            <i class="fa-solid fa-plus"></i>
-            <span>Create New Class</span>
-        </button>
+        @if(!Auth::user()->isAssistant())
+            <button @click="createModalOpen = true" 
+                    class="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-md shadow-indigo-600/30 flex items-center justify-center gap-2 transition-all">
+                <i class="fa-solid fa-plus"></i>
+                <span>Create New Class</span>
+            </button>
+        @endif
     </div>
 
     <!-- Classes Cards Grid -->
@@ -123,12 +125,17 @@
                 <div class="w-16 h-16 rounded-2xl bg-indigo-50 text-indigo-500 flex items-center justify-center text-3xl mx-auto mb-4">
                     <i class="fa-solid fa-chalkboard"></i>
                 </div>
-                <h3 class="text-base font-bold text-slate-800">No classes created yet</h3>
-                <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">Create your first class to generate a self-registration link and begin tracking student attendance and fees.</p>
-                <button @click="createModalOpen = true" class="mt-5 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-md shadow-indigo-600/30 transition-all inline-flex items-center gap-2">
-                    <i class="fa-solid fa-plus"></i>
-                    <span>Create Class Now</span>
-                </button>
+                @if(Auth::user()->isAssistant())
+                    <h3 class="text-base font-bold text-slate-800">No classes assigned to you yet</h3>
+                    <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">Please ask your instructor to assign classes to your assistant account.</p>
+                @else
+                    <h3 class="text-base font-bold text-slate-800">No classes created yet</h3>
+                    <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">Create your first class to generate a self-registration link and begin tracking student attendance and fees.</p>
+                    <button @click="createModalOpen = true" class="mt-5 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-md shadow-indigo-600/30 transition-all inline-flex items-center gap-2">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>Create Class Now</span>
+                    </button>
+                @endif
             </div>
         @endforelse
     </div>

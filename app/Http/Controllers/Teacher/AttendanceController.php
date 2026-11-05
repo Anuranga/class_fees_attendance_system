@@ -391,20 +391,25 @@ class AttendanceController extends Controller
 
     /**
      * Daily Attendance & Cash Collection Ledger Sheet.
-     * Both teachers and assistants can filter by class and day.
+     * Both teachers and assistants can filter by class and day (scoped to accessible classes).
      */
     public function dailySheet(Request $request): View
     {
-        $teacherId = Auth::user()->effectiveTeacherId();
         $date = $request->query('date', Carbon::today()->toDateString());
         $selectedClassId = $request->query('class_id');
 
-        // Teacher's classes
-        $classes = ClassRoom::where('teacher_id', $teacherId)->get();
+        // Accessible classes for teacher or assistant
+        $classes = Auth::user()->accessibleClassesQuery()->get();
         $classIds = $classes->pluck('id')->toArray();
 
-        // Scope to selected class or all teacher's classes
-        $filteredClassIds = $selectedClassId ? [(int) $selectedClassId] : $classIds;
+        // Scope to selected class (only if allowed) or all accessible classes
+        if ($selectedClassId && in_array((int) $selectedClassId, $classIds, true)) {
+            $filteredClassIds = [(int) $selectedClassId];
+        } elseif ($selectedClassId) {
+            abort(403, 'Unauthorized. You do not have access to this class.');
+        } else {
+            $filteredClassIds = $classIds;
+        }
 
         // 1. Attendances for the selected date
         $attendances = Attendance::with(['student', 'classRoom', 'markedBy'])
@@ -446,8 +451,8 @@ class AttendanceController extends Controller
 
     protected function authorizeTeacher(ClassRoom $class): void
     {
-        if ($class->teacher_id !== Auth::user()->effectiveTeacherId() && ! Auth::user()->isAdmin()) {
-            abort(403, 'Unauthorized. You do not own this class.');
+        if (! Auth::user()->canAccessClass($class)) {
+            abort(403, 'Unauthorized. You do not have access to this class.');
         }
     }
 }

@@ -59,6 +59,12 @@ class ClassRoom extends Model
         return $this->belongsTo(User::class, 'teacher_id');
     }
 
+    public function assistants(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'assistant_class', 'class_id', 'user_id')
+            ->withTimestamps();
+    }
+
     public function students(): BelongsToMany
     {
         return $this->belongsToMany(Student::class, 'class_student', 'class_id', 'student_id')

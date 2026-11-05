@@ -374,4 +374,67 @@ class AttendanceAndFeeTest extends TestCase
         $this->assertNotNull($student->photo_path);
         Storage::disk('public')->assertExists($student->photo_path);
     }
+
+    public function test_assistant_can_only_view_and_manage_assigned_classes(): void
+    {
+        $secondClass = ClassRoom::create([
+            'teacher_id' => $this->teacher->id,
+            'name' => 'Physics Grade 13',
+            'grade_level' => 'Grade 13',
+            'monthly_fee' => 4000.00,
+            'registration_token' => 'phys13-token-2026',
+            'is_registration_open' => true,
+        ]);
+
+        // Teacher creates an assistant and assigns ONLY the first class ($this->classRoom)
+        $response = $this->actingAs($this->teacher)->post(route('teacher.assistants.store'), [
+            'name' => 'Assigned Assistant',
+            'email' => 'assistant@edutrack.test',
+            'password' => 'secret123',
+            'class_ids' => [$this->classRoom->id],
+        ]);
+
+        $response->assertRedirect();
+        $assistant = User::where('email', 'assistant@edutrack.test')->first();
+        $this->assertNotNull($assistant);
+        $this->assertTrue($assistant->isAssistant());
+        $this->assertEquals([$this->classRoom->id], $assistant->assignedClasses()->pluck('classes.id')->toArray());
+
+        // Assistant views classes index -> sees assigned class, NOT unassigned class
+        $classesIndex = $this->actingAs($assistant)->get(route('teacher.classes.index'));
+        $classesIndex->assertStatus(200);
+        $classesIndex->assertSee($this->classRoom->name);
+        $classesIndex->assertDontSee($secondClass->name);
+
+        // Assistant can view assigned class details
+        $this->actingAs($assistant)
+            ->get(route('teacher.classes.show', $this->classRoom))
+            ->assertStatus(200);
+
+        // Assistant CANNOT view unassigned class details (403 Forbidden)
+        $this->actingAs($assistant)
+            ->get(route('teacher.classes.show', $secondClass))
+            ->assertStatus(403);
+
+        // Assistant CANNOT view unassigned class attendance scanner (403 Forbidden)
+        $this->actingAs($assistant)
+            ->get(route('teacher.attendance.show', $secondClass))
+            ->assertStatus(403);
+
+        // Teacher updates assistant's assigned classes to $secondClass only
+        $this->actingAs($this->teacher)
+            ->put(route('teacher.assistants.update-classes', $assistant), [
+                'class_ids' => [$secondClass->id],
+            ])
+            ->assertRedirect();
+
+        // Now assistant can access $secondClass and NOT $this->classRoom
+        $this->actingAs($assistant->fresh())
+            ->get(route('teacher.classes.show', $secondClass))
+            ->assertStatus(200);
+
+        $this->actingAs($assistant->fresh())
+            ->get(route('teacher.classes.show', $this->classRoom))
+            ->assertStatus(403);
+    }
 }

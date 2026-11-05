@@ -20,14 +20,14 @@ use Illuminate\View\View;
 class ClassController extends Controller
 {
     /**
-     * Display a listing of teacher's classes.
+     * Display a listing of teacher's classes (or assistant's assigned classes).
      */
     public function index(): View
     {
-        $teacherId = Auth::user()->effectiveTeacherId();
-        $classes = ClassRoom::withCount(['students' => function ($q) {
-            $q->where('class_student.status', 'active');
-        }])->where('teacher_id', $teacherId)->latest()->get();
+        $classes = Auth::user()->accessibleClassesQuery()
+            ->withCount(['students' => function ($q) {
+                $q->where('class_student.status', 'active');
+            }])->latest()->get();
 
         $currentMonth = Carbon::now()->format('Y-m');
 
@@ -39,6 +39,10 @@ class ClassController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
+        if (Auth::user()->isAssistant()) {
+            abort(403, 'Unauthorized. Assistants cannot create new classes.');
+        }
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'grade_level' => ['required', 'string', 'max:100'],
@@ -465,12 +469,12 @@ class ClassController extends Controller
     }
 
     /**
-     * Enforce teacher multi-tenant boundary.
+     * Enforce teacher & assistant class assignment boundary.
      */
     protected function authorizeTeacher(ClassRoom $class): void
     {
-        if ($class->teacher_id !== Auth::user()->effectiveTeacherId() && ! Auth::user()->isAdmin()) {
-            abort(403, 'Unauthorized. You do not own this class.');
+        if (! Auth::user()->canAccessClass($class)) {
+            abort(403, 'Unauthorized. You do not have access to this class.');
         }
     }
 }

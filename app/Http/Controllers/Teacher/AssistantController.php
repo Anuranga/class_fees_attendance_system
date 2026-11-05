@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Teacher;
 
 use App\Http\Controllers\Controller;
+use App\Models\ClassRoom;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -23,17 +24,22 @@ class AssistantController extends Controller
             abort(403, 'Unauthorized. Assistant accounts cannot manage other assistants.');
         }
 
+        $classes = ClassRoom::where('teacher_id', $teacher->id)
+            ->orderBy('name')
+            ->get();
+
         $assistants = User::where('role', 'assistant')
             ->where('teacher_id', $teacher->id)
+            ->with('assignedClasses')
             ->withCount('attendancesMarked')
             ->latest()
             ->get();
 
-        return view('teacher.assistants.index', compact('assistants'));
+        return view('teacher.assistants.index', compact('assistants', 'classes'));
     }
 
     /**
-     * Create a new assistant account for the current teacher.
+     * Create a new assistant account for the current teacher and assign selected classes.
      */
     public function store(Request $request): RedirectResponse
     {
@@ -47,7 +53,15 @@ class AssistantController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:6'],
+            'class_ids' => ['nullable', 'array'],
+            'class_ids.*' => ['integer', 'exists:classes,id'],
         ]);
+
+        // Only allow assigning classes owned by this teacher
+        $validClassIds = ClassRoom::where('teacher_id', $teacher->id)
+            ->whereIn('id', $validated['class_ids'] ?? [])
+            ->pluck('id')
+            ->toArray();
 
         $assistant = User::create([
             'name' => $validated['name'],
@@ -59,7 +73,33 @@ class AssistantController extends Controller
             'email_verified_at' => now(),
         ]);
 
-        return back()->with('success', "Teaching Assistant account for '{$assistant->name}' created successfully!");
+        $assistant->assignedClasses()->sync($validClassIds);
+
+        return back()->with('success', "Teaching Assistant account for '{$assistant->name}' created and assigned to ".count($validClassIds).' class(es)!');
+    }
+
+    /**
+     * Update the classes assigned to an assistant.
+     */
+    public function updateClasses(Request $request, User $assistant): RedirectResponse
+    {
+        $this->authorizeOwner($assistant);
+
+        $validated = $request->validate([
+            'class_ids' => ['nullable', 'array'],
+            'class_ids.*' => ['integer', 'exists:classes,id'],
+        ]);
+
+        $teacherId = $assistant->teacher_id ?: Auth::user()->effectiveTeacherId();
+
+        $validClassIds = ClassRoom::where('teacher_id', $teacherId)
+            ->whereIn('id', $validated['class_ids'] ?? [])
+            ->pluck('id')
+            ->toArray();
+
+        $assistant->assignedClasses()->sync($validClassIds);
+
+        return back()->with('success', "Assigned classes updated for '{$assistant->name}' (".count($validClassIds).' class(es) assigned).');
     }
 
     /**

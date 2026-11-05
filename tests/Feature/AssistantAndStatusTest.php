@@ -88,6 +88,8 @@ class AssistantAndStatusTest extends TestCase
             'teacher_id' => $this->teacher->id,
         ]);
 
+        $assistant->assignedClasses()->attach($this->classRoom->id);
+
         $student = Student::create([
             'admission_number' => 'ADM-101',
             'full_name' => 'Nimal Silva',
