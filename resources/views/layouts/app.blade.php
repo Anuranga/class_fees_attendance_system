@@ -115,6 +115,18 @@
                         <span>Global Students</span>
                     </a>
 
+                    <a href="{{ route('admin.applications.index') }}" 
+                       class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all {{ request()->routeIs('admin.applications.*') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                        <i class="fa-solid fa-file-signature w-5 text-center text-base text-amber-400"></i>
+                        <span>Admissions Review</span>
+                    </a>
+
+                    <a href="{{ route('admin.settings.school') }}" 
+                       class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all {{ request()->routeIs('admin.settings.school') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                        <i class="fa-solid fa-school w-5 text-center text-base text-cyan-400"></i>
+                        <span>School Identity</span>
+                    </a>
+
                     <div class="pt-4 border-t border-slate-800/80 my-3"></div>
                     <div class="px-3 pb-1 text-xs font-semibold uppercase tracking-wider text-slate-400">Teacher View Mode</div>
                     <a href="{{ route('teacher.dashboard') }}" 

@@ -1,7 +1,11 @@
 <?php
 
+use App\Http\Controllers\Admin\ApplicationManagementController as AdminApplicationController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\SchoolSettingController as AdminSchoolSettingController;
+use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PublicRegistrationController;
 use App\Http\Controllers\Teacher\AssistantController as TeacherAssistantController;
 use App\Http\Controllers\Teacher\AttendanceController as TeacherAttendanceController;
@@ -16,9 +20,14 @@ use Illuminate\Support\Facades\Storage;
 | Public Routes
 |--------------------------------------------------------------------------
 */
-Route::get('/', function () {
-    return view('welcome');
-})->name('home');
+Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::get('/about-us', [HomeController::class, 'about'])->name('public.about');
+
+// Pre-School Online Admission Application (WhatsApp Shareable Form)
+Route::get('/apply', [ApplicationController::class, 'create'])->name('public.apply');
+Route::post('/apply', [ApplicationController::class, 'store'])->name('public.apply.store');
+Route::get('/apply/success/{application_number}', [ApplicationController::class, 'success'])->name('public.apply.success');
+Route::get('/apply/status', [ApplicationController::class, 'status'])->name('public.apply.status');
 
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
@@ -98,4 +107,13 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::delete('/users/{user}', [AdminDashboardController::class, 'destroyUser'])->name('users.destroy');
     Route::get('/payments', [AdminDashboardController::class, 'payments'])->name('payments.index');
     Route::get('/students', [AdminDashboardController::class, 'students'])->name('students.index');
+
+    // Pre-School Settings & Online Admission Applications
+    Route::get('/settings/school', [AdminSchoolSettingController::class, 'edit'])->name('settings.school');
+    Route::put('/settings/school', [AdminSchoolSettingController::class, 'update'])->name('settings.school.update');
+
+    Route::get('/applications', [AdminApplicationController::class, 'index'])->name('applications.index');
+    Route::get('/applications/{application}', [AdminApplicationController::class, 'show'])->name('applications.show');
+    Route::post('/applications/{application}/status', [AdminApplicationController::class, 'updateStatus'])->name('applications.status');
+    Route::post('/applications/{application}/enroll', [AdminApplicationController::class, 'enroll'])->name('applications.enroll');
 });

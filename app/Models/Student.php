@@ -14,11 +14,22 @@ class Student extends Model
     protected $fillable = [
         'admission_number',
         'full_name',
+        'date_of_birth',
         'gender',
+        'blood_group',
+        'allergies_medical_notes',
         'photo_path',
         'contact_number',
         'guardian_name',
         'guardian_phone',
+        'emergency_contact_name',
+        'emergency_contact_phone',
+        'authorized_pickup_persons',
+        'home_address',
+    ];
+
+    protected $casts = [
+        'date_of_birth' => 'date',
     ];
 
     protected $appends = [

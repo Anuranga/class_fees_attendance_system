@@ -30,21 +30,29 @@
         <div class="max-w-6xl mx-auto flex items-center justify-between">
             <a href="{{ route('home') }}" class="flex items-center gap-3">
                 <div class="w-9 h-9 rounded-xl gradient-brand flex items-center justify-center text-white shadow-md shadow-indigo-500/20">
-                    <i class="fa-solid fa-graduation-cap"></i>
+                    <i class="fa-solid fa-shapes"></i>
                 </div>
-                <span class="font-bold text-lg text-white tracking-tight">EduTrack</span>
+                <span class="font-bold text-lg text-white tracking-tight">Little Stars Pre-School</span>
             </a>
 
             <div class="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm font-medium">
+                <a href="{{ route('public.about') }}" class="text-slate-300 hover:text-white transition-colors flex items-center gap-1.5">
+                    <i class="fa-solid fa-school text-xs text-amber-400"></i>
+                    <span>Vision & Mission</span>
+                </a>
+                <a href="{{ route('public.apply') }}" class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow transition-all flex items-center gap-1">
+                    <i class="fa-solid fa-file-pen"></i>
+                    <span>Apply Online</span>
+                </a>
+                <a href="{{ route('public.apply.status') }}" class="text-slate-300 hover:text-white transition-colors flex items-center gap-1.5 hidden md:flex">
+                    <i class="fa-solid fa-magnifying-glass text-xs text-cyan-400"></i>
+                    <span>App Status</span>
+                </a>
                 <a href="{{ route('public.lookup') }}" class="text-slate-300 hover:text-white transition-colors flex items-center gap-1.5">
                     <i class="fa-solid fa-id-card text-xs text-indigo-400"></i>
-                    <span>Find My Pass</span>
+                    <span>QR Pass</span>
                 </a>
-                <a href="{{ route('register') }}" class="text-slate-300 hover:text-white transition-colors flex items-center gap-1.5 hidden sm:flex">
-                    <i class="fa-solid fa-user-plus text-xs text-indigo-400"></i>
-                    <span>Teacher Register</span>
-                </a>
-                <a href="{{ route('login') }}" class="px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow transition-all">
+                <a href="{{ route('login') }}" class="px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow transition-all">
                     Staff Portal
                 </a>
             </div>
