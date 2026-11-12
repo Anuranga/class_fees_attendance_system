@@ -60,11 +60,47 @@
                     </div>
                     <input type="text" id="name" name="name" value="{{ old('name') }}" required autofocus
                            class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-900/80 border border-slate-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 text-white placeholder-slate-500 text-sm transition-all"
-                           placeholder="e.g. Prof. Alan Turing">
+                           placeholder="e.g. Mrs. Sunethra Perera">
                 </div>
                 @error('name')
                     <p class="mt-1.5 text-xs text-rose-400">{{ $message }}</p>
                 @enderror
+            </div>
+
+            <!-- Pre-School Name (for Principal registration) -->
+            <div x-show="selectedRole === 'principal'" x-transition class="space-y-4">
+                <div>
+                    <label for="preschool_name" class="block text-xs font-semibold text-amber-300 uppercase tracking-wider mb-2">
+                        <i class="fa-solid fa-school text-amber-400 mr-1"></i> Pre-School / Nursery Name *
+                    </label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                            <i class="fa-solid fa-shapes text-sm"></i>
+                        </div>
+                        <input type="text" id="preschool_name" name="preschool_name" value="{{ old('preschool_name') }}"
+                               :required="selectedRole === 'principal'"
+                               class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-900/80 border border-amber-500/50 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/30 text-white placeholder-slate-500 text-sm transition-all"
+                               placeholder="e.g. Seven Bees Pre-School, Miracle Nursery, Global International">
+                    </div>
+                    <p class="text-[11px] text-slate-400 mt-1">This will create your school's branded admission portal and unique WhatsApp registration link.</p>
+                    @error('preschool_name')
+                        <p class="mt-1.5 text-xs text-rose-400">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label for="contact_phone" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+                        <i class="fa-brands fa-whatsapp text-emerald-400 mr-1"></i> Pre-School Official WhatsApp / Phone
+                    </label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                            <i class="fa-solid fa-phone text-sm"></i>
+                        </div>
+                        <input type="text" id="contact_phone" name="contact_phone" value="{{ old('contact_phone') }}"
+                               class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-900/80 border border-slate-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 text-white placeholder-slate-500 text-sm transition-all"
+                               placeholder="e.g. 077 123 4567">
+                    </div>
+                </div>
             </div>
 
             <!-- Email -->

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
 class ClassRoom extends Model
@@ -21,6 +22,7 @@ class ClassRoom extends Model
     ];
 
     protected $fillable = [
+        'school_setting_id',
         'teacher_id',
         'name',
         'grade_level',
@@ -51,7 +53,20 @@ class ClassRoom extends Model
             if (empty($classRoom->registration_token)) {
                 $classRoom->registration_token = Str::random(24);
             }
+            if (empty($classRoom->school_setting_id)) {
+                $teacher = User::find($classRoom->teacher_id) ?? Auth::user();
+                if ($teacher?->school_setting_id) {
+                    $classRoom->school_setting_id = $teacher->school_setting_id;
+                } else {
+                    $classRoom->school_setting_id = SchoolSetting::get($teacher)->id;
+                }
+            }
         });
+    }
+
+    public function school(): BelongsTo
+    {
+        return $this->belongsTo(SchoolSetting::class, 'school_setting_id');
     }
 
     public function teacher(): BelongsTo

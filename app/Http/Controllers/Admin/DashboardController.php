@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ClassRoom;
 use App\Models\ClassStudent;
 use App\Models\Payment;
+use App\Models\SchoolSetting;
 use App\Models\Student;
 use App\Models\User;
 use Carbon\Carbon;
@@ -22,18 +23,39 @@ class DashboardController extends Controller
      */
     public function index(): View
     {
-        $totalTeachers = User::where('role', 'teacher')->count();
-        $pendingTeachersCount = User::where('role', 'teacher')->where('status', 'pending')->count();
-        $pendingTeachers = User::where('role', 'teacher')->where('status', 'pending')->latest()->limit(5)->get();
-        $totalClasses = ClassRoom::count();
-        $totalStudents = Student::count();
-        $totalEnrollments = ClassStudent::where('status', 'active')->count();
+        $school = SchoolSetting::get();
+        $principal = Auth::user();
 
-        $allTimeRevenue = Payment::sum('amount');
+        // Classes belonging to this preschool
+        $classesQuery = ClassRoom::where(function ($q) use ($school, $principal) {
+            $q->where('school_setting_id', $school->id)
+                ->orWhere('teacher_id', $principal->id);
+        });
+        $classIds = $classesQuery->pluck('id')->toArray();
+
+        // Teachers belonging to this preschool (or pending unassigned applicants)
+        $teachersQuery = User::where('role', 'teacher')
+            ->where(function ($q) use ($school, $principal) {
+                $q->where('school_setting_id', $school->id)
+                    ->orWhere('teacher_id', $principal->id)
+                    ->orWhere(function ($sub) {
+                        $sub->whereNull('school_setting_id')->whereNull('teacher_id');
+                    });
+            });
+
+        $totalTeachers = $teachersQuery->count();
+        $pendingTeachersCount = (clone $teachersQuery)->where('status', 'pending')->count();
+        $pendingTeachers = (clone $teachersQuery)->where('status', 'pending')->latest()->limit(5)->get();
+        $totalClasses = count($classIds);
+
+        $totalEnrollments = ClassStudent::whereIn('class_id', $classIds)->where('status', 'active')->count();
+        $totalStudents = ClassStudent::whereIn('class_id', $classIds)->distinct('student_id')->count('student_id');
+
+        $allTimeRevenue = Payment::whereIn('class_id', $classIds)->sum('amount');
         $currentMonth = Carbon::now()->format('Y-m');
-        $currentMonthRevenue = Payment::where('payment_month', $currentMonth)->sum('amount');
+        $currentMonthRevenue = Payment::whereIn('class_id', $classIds)->where('payment_month', $currentMonth)->sum('amount');
 
-        // Past 6 months system-wide revenue trend
+        // Past 6 months system-wide revenue trend for this preschool
         $monthsTrend = [];
         $monthsLabels = [];
         $monthlyRevenues = [];
@@ -44,21 +66,25 @@ class DashboardController extends Controller
             $monthsTrend[] = $mKey;
             $monthsLabels[] = $monthObj->format('M Y');
 
-            $sum = Payment::where('payment_month', $mKey)->sum('amount');
+            $sum = Payment::whereIn('class_id', $classIds)->where('payment_month', $mKey)->sum('amount');
             $monthlyRevenues[] = (float) $sum;
         }
 
         // Teachers performance table
-        $teachers = User::where('role', 'teacher')
-            ->withCount('classes')
-            ->with(['classes' => function ($q) {
-                $q->withCount('enrollments');
+        $teachers = $teachersQuery
+            ->withCount(['classes' => function ($q) use ($classIds) {
+                $q->whereIn('id', $classIds);
+            }])
+            ->with(['classes' => function ($q) use ($classIds) {
+                $q->whereIn('id', $classIds)->withCount('enrollments');
             }])
             ->get()
             ->map(function ($teacher) use ($currentMonth) {
-                $teacher->total_students = ClassStudent::whereIn('class_id', $teacher->classes->pluck('id'))
+                $teacherClassIds = $teacher->classes->pluck('id')->toArray();
+                $teacher->total_students = ClassStudent::whereIn('class_id', $teacherClassIds)
                     ->where('status', 'active')
-                    ->count();
+                    ->distinct('student_id')
+                    ->count('student_id');
 
                 $teacher->current_month_revenue = Payment::where('teacher_id', $teacher->id)
                     ->where('payment_month', $currentMonth)
@@ -70,7 +96,8 @@ class DashboardController extends Controller
             });
 
         // Recent system-wide payments
-        $recentPayments = Payment::with(['teacher', 'student', 'classRoom'])
+        $recentPayments = Payment::whereIn('class_id', $classIds)
+            ->with(['teacher', 'student', 'classRoom'])
             ->latest()
             ->limit(8)
             ->get();
@@ -89,6 +116,7 @@ class DashboardController extends Controller
             'monthlyRevenues' => $monthlyRevenues,
             'teachers' => $teachers,
             'recentPayments' => $recentPayments,
+            'school' => $school,
         ]);
     }
 
@@ -97,9 +125,18 @@ class DashboardController extends Controller
      */
     public function teachers(Request $request): View
     {
+        $school = SchoolSetting::get();
+        $principal = Auth::user();
         $statusFilter = $request->query('status');
 
         $query = User::where('role', 'teacher')
+            ->where(function ($q) use ($school, $principal) {
+                $q->where('school_setting_id', $school->id)
+                    ->orWhere('teacher_id', $principal->id)
+                    ->orWhere(function ($sub) {
+                        $sub->whereNull('school_setting_id')->whereNull('teacher_id');
+                    });
+            })
             ->withCount('classes')
             ->with([
                 'classes' => function ($q) {
@@ -115,12 +152,20 @@ class DashboardController extends Controller
 
         $teachers = $query->get();
 
+        $scopedTeacherFilter = function ($q) use ($school, $principal) {
+            $q->where('school_setting_id', $school->id)
+                ->orWhere('teacher_id', $principal->id)
+                ->orWhere(function ($sub) {
+                    $sub->whereNull('school_setting_id')->whereNull('teacher_id');
+                });
+        };
+
         $counts = [
-            'all' => User::where('role', 'teacher')->count(),
-            'pending' => User::where('role', 'teacher')->where('status', 'pending')->count(),
-            'active' => User::where('role', 'teacher')->where('status', 'active')->count(),
-            'blocked' => User::where('role', 'teacher')->where('status', 'blocked')->count(),
-            'inactive' => User::where('role', 'teacher')->where('status', 'inactive')->count(),
+            'all' => User::where('role', 'teacher')->where($scopedTeacherFilter)->count(),
+            'pending' => User::where('role', 'teacher')->where('status', 'pending')->where($scopedTeacherFilter)->count(),
+            'active' => User::where('role', 'teacher')->where('status', 'active')->where($scopedTeacherFilter)->count(),
+            'blocked' => User::where('role', 'teacher')->where('status', 'blocked')->where($scopedTeacherFilter)->count(),
+            'inactive' => User::where('role', 'teacher')->where('status', 'inactive')->where($scopedTeacherFilter)->count(),
         ];
 
         return view('admin.teachers.index', compact('teachers', 'counts', 'statusFilter'));
@@ -131,6 +176,8 @@ class DashboardController extends Controller
      */
     public function storeTeacher(Request $request): RedirectResponse
     {
+        $school = SchoolSetting::get();
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'unique:users,email'],
@@ -138,6 +185,8 @@ class DashboardController extends Controller
         ]);
 
         $teacher = User::create([
+            'school_setting_id' => $school->id,
+            'teacher_id' => Auth::id(),
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
@@ -201,11 +250,20 @@ class DashboardController extends Controller
     }
 
     /**
-     * Global Payments view with filters.
+     * Global Payments view with filters (scoped to this Pre-School).
      */
     public function payments(Request $request): View
     {
-        $query = Payment::with(['teacher', 'classRoom', 'student'])->latest();
+        $school = SchoolSetting::get();
+        $principal = Auth::user();
+        $classIds = ClassRoom::where('school_setting_id', $school->id)
+            ->orWhere('teacher_id', $principal->id)
+            ->pluck('id')
+            ->toArray();
+
+        $query = Payment::whereIn('class_id', $classIds)
+            ->with(['teacher', 'classRoom', 'student'])
+            ->latest();
 
         if ($request->filled('teacher_id')) {
             $query->where('teacher_id', $request->teacher_id);
@@ -227,7 +285,9 @@ class DashboardController extends Controller
         }
 
         $payments = $query->paginate(20)->withQueryString();
-        $teachers = User::where('role', 'teacher')->get();
+        $teachers = User::where('role', 'teacher')
+            ->where(fn ($q) => $q->where('school_setting_id', $school->id)->orWhere('teacher_id', $principal->id))
+            ->get();
         $totalCollected = $query->sum('amount');
 
         return view('admin.payments.index', [
@@ -239,13 +299,23 @@ class DashboardController extends Controller
     }
 
     /**
-     * Global Students directory.
+     * Global Students directory (scoped to this Pre-School).
      */
     public function students(Request $request): View
     {
-        $query = Student::withCount(['enrollments' => function ($q) {
-            $q->where('status', 'active');
-        }])->with('classes.teacher')->latest();
+        $school = SchoolSetting::get();
+        $principal = Auth::user();
+        $classIds = ClassRoom::where('school_setting_id', $school->id)
+            ->orWhere('teacher_id', $principal->id)
+            ->pluck('id')
+            ->toArray();
+
+        $query = Student::whereHas('classes', function ($q) use ($classIds) {
+            $q->whereIn('classes.id', $classIds);
+        })
+            ->withCount(['enrollments' => function ($q) {
+                $q->where('status', 'active');
+            }])->with('classes.teacher')->latest();
 
         if ($request->filled('search')) {
             $search = $request->search;

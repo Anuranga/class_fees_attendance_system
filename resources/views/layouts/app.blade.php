@@ -97,6 +97,18 @@
                         <span>System Analytics</span>
                     </a>
 
+                    <a href="{{ route('admin.applications.link') }}" 
+                       class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all {{ request()->routeIs('admin.applications.link') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                        <i class="fa-solid fa-paper-plane w-5 text-center text-base text-emerald-400"></i>
+                        <span>Apply Online Link</span>
+                    </a>
+
+                    <a href="{{ route('admin.applications.index') }}" 
+                       class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all {{ request()->routeIs('admin.applications.index') || request()->routeIs('admin.applications.show') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                        <i class="fa-solid fa-file-signature w-5 text-center text-base text-amber-400"></i>
+                        <span>Admissions Review</span>
+                    </a>
+
                     <a href="{{ route('admin.teachers.index') }}" 
                        class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all {{ request()->routeIs('admin.teachers.*') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                         <i class="fa-solid fa-chalkboard-user w-5 text-center text-base"></i>
@@ -113,12 +125,6 @@
                        class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all {{ request()->routeIs('admin.students.*') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                         <i class="fa-solid fa-users w-5 text-center text-base"></i>
                         <span>Global Students</span>
-                    </a>
-
-                    <a href="{{ route('admin.applications.index') }}" 
-                       class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all {{ request()->routeIs('admin.applications.*') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
-                        <i class="fa-solid fa-file-signature w-5 text-center text-base text-amber-400"></i>
-                        <span>Admissions Review</span>
                     </a>
 
                     <a href="{{ route('admin.settings.school') }}" 

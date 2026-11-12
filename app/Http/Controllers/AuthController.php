@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\SchoolSetting;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class AuthController extends Controller
@@ -40,26 +42,67 @@ class AuthController extends Controller
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:6', 'confirmed'],
             'role' => ['nullable', 'string', 'in:teacher,principal'],
+            'preschool_name' => ['nullable', 'string', 'max:255'],
+            'contact_phone' => ['nullable', 'string', 'max:40'],
         ]);
 
         $role = $validated['role'] ?? 'teacher';
 
-        // If registering as Principal, and no other admin/principal exists, activate immediately; otherwise set pending or active
+        if ($role === 'principal') {
+            $schoolName = ! empty($validated['preschool_name']) ? trim($validated['preschool_name']) : ($validated['name']."'s Pre-School");
+
+            $user = User::create([
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'password' => Hash::make($validated['password']),
+                'role' => 'admin',
+                'status' => 'active',
+                'can_collect_fees' => true,
+                'can_manage_uniforms' => true,
+            ]);
+
+            $school = SchoolSetting::create([
+                'user_id' => $user->id,
+                'name' => $schoolName,
+                'motto' => 'Nurturing Little Minds for a Brighter Tomorrow',
+                'slug' => Str::slug($schoolName).'-'.Str::random(4),
+                'registration_token' => Str::random(24),
+                'contact_email' => $user->email,
+                'contact_phone' => $validated['contact_phone'] ?? null,
+                'whatsapp_number' => $validated['contact_phone'] ?? null,
+                'academic_year' => date('Y').'/'.(date('Y') + 1),
+                'is_admission_open' => true,
+                'items_to_bring_sinhala' => SchoolSetting::defaultSinhalaItems(),
+                'vision' => 'To be a center of early childhood educational excellence where every child discovers joy in learning, creativity, and self-confidence.',
+                'mission' => 'We provide a loving, safe, and stimulating environment guided by holistic early learning methodologies.',
+                'about_us' => "Welcome to {$schoolName}. We offer quality pre-school education and child care.",
+                'principal_message' => "Welcome to {$schoolName}! Every child is unique and full of potential.",
+            ]);
+
+            $user->update(['school_setting_id' => $school->id]);
+
+            return redirect()->route('login')->with('success', "Pre-School '{$schoolName}' registered successfully! You can now log in as Principal.");
+        }
+
+        // Registering as Teacher
         $hasExistingPrincipal = User::whereIn('role', ['admin', 'principal'])->exists();
-        $status = ($role === 'principal' && ! $hasExistingPrincipal) ? 'active' : 'pending';
+        $status = ! $hasExistingPrincipal ? 'active' : 'pending';
+
+        $firstSchool = SchoolSetting::first();
 
         User::create([
+            'school_setting_id' => $firstSchool?->id,
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
-            'role' => $role === 'principal' ? 'admin' : 'teacher',
+            'role' => 'teacher',
             'status' => $status,
-            'can_collect_fees' => $role === 'principal',
-            'can_manage_uniforms' => $role === 'principal',
+            'can_collect_fees' => false,
+            'can_manage_uniforms' => false,
         ]);
 
         $successMsg = ($status === 'active')
-            ? 'Principal account created and activated successfully! You can now log in.'
+            ? 'Teacher account created and activated successfully! You can now log in.'
             : 'Your account has been registered successfully! It is currently pending administrator verification before sign in.';
 
         return redirect()->route('login')->with('success', $successMsg);

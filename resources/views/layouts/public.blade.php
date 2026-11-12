@@ -32,7 +32,7 @@
                 <div class="w-9 h-9 rounded-xl gradient-brand flex items-center justify-center text-white shadow-md shadow-indigo-500/20">
                     <i class="fa-solid fa-shapes"></i>
                 </div>
-                <span class="font-bold text-lg text-white tracking-tight">Little Stars Pre-School</span>
+                <span class="font-bold text-lg text-white tracking-tight">{{ $school->name ?? 'Pre-School Portal' }}</span>
             </a>
 
             <div class="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm font-medium">
@@ -67,10 +67,10 @@
     <!-- Public Footer -->
     <footer class="no-print py-6 text-center text-xs text-slate-500 border-t border-slate-800/60">
         <div class="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-            <span>&copy; {{ date('Y') }} EduTrack Systems. All rights reserved.</span>
+            <span>&copy; {{ date('Y') }} {{ $school->name ?? 'EduTrack Systems' }}. All rights reserved.</span>
             <div class="flex items-center gap-4">
                 <a href="{{ route('home') }}" class="hover:text-slate-400 transition-colors">Portal Home</a>
-                <a href="{{ route('register') }}" class="hover:text-slate-400 transition-colors">Teacher Register</a>
+                <a href="{{ route('register') }}" class="hover:text-slate-400 transition-colors">Principal & Staff Register</a>
                 <a href="{{ route('public.lookup') }}" class="hover:text-slate-400 transition-colors">Student Lookup</a>
                 <a href="{{ route('login') }}" class="hover:text-slate-400 transition-colors">Teacher & Admin Sign In</a>
             </div>

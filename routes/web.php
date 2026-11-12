@@ -120,6 +120,11 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/settings/school', [AdminSchoolSettingController::class, 'edit'])->name('settings.school');
     Route::put('/settings/school', [AdminSchoolSettingController::class, 'update'])->name('settings.school.update');
 
+    // Dedicated Apply Online Management Tab & Links
+    Route::get('/apply-online', [AdminApplicationController::class, 'onlineLink'])->name('applications.link');
+    Route::post('/apply-online/regenerate', [AdminApplicationController::class, 'regenerateLink'])->name('applications.regenerate-link');
+    Route::post('/apply-online/settings', [AdminApplicationController::class, 'updateLinkSettings'])->name('applications.update-link-settings');
+
     Route::get('/applications', [AdminApplicationController::class, 'index'])->name('applications.index');
     Route::get('/applications/{application}', [AdminApplicationController::class, 'show'])->name('applications.show');
     Route::post('/applications/{application}/status', [AdminApplicationController::class, 'updateStatus'])->name('applications.status');

@@ -11,6 +11,7 @@ use App\Models\Student;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class ApplicationManagementController extends Controller
@@ -58,10 +59,70 @@ class ApplicationManagementController extends Controller
     public function show(Application $application): View
     {
         $application->load(['assignedClass', 'student.classes', 'reviewer']);
-        $classes = ClassRoom::orderBy('name')->get();
         $school = SchoolSetting::get();
+        $classes = ClassRoom::where(function ($q) use ($school) {
+            $q->where('school_setting_id', $school->id)
+                ->orWhere('teacher_id', Auth::id());
+        })->orderBy('name')->get();
 
         return view('admin.applications.show', compact('application', 'classes', 'school'));
+    }
+
+    /**
+     * Dedicated Apply Online Link & Portal Management Tab for Principal.
+     */
+    public function onlineLink(): View
+    {
+        $school = SchoolSetting::get();
+
+        $counts = [
+            'all' => Application::where('school_setting_id', $school->id)->count(),
+            'pending' => Application::where('school_setting_id', $school->id)->where('status', 'pending')->count(),
+            'approved' => Application::where('school_setting_id', $school->id)->where('status', 'approved')->count(),
+            'enrolled' => Application::where('school_setting_id', $school->id)->where('status', 'enrolled')->count(),
+        ];
+
+        $recentApplications = Application::where('school_setting_id', $school->id)
+            ->latest()
+            ->limit(5)
+            ->get();
+
+        return view('admin.applications.link', compact('school', 'counts', 'recentApplications'));
+    }
+
+    /**
+     * Regenerate unique token for this Pre-School's online application link.
+     */
+    public function regenerateLink(): RedirectResponse
+    {
+        $school = SchoolSetting::get();
+        $school->update([
+            'registration_token' => Str::random(24),
+        ]);
+
+        return back()->with('success', "A new secure online admission link has been generated for {$school->name}!");
+    }
+
+    /**
+     * Quick update of admission portal link settings (slug, admission open/closed).
+     */
+    public function updateLinkSettings(Request $request): RedirectResponse
+    {
+        $school = SchoolSetting::get();
+
+        $validated = $request->validate([
+            'slug' => ['required', 'string', 'max:80', 'alpha_dash', 'unique:school_settings,slug,'.$school->id],
+            'academic_year' => ['required', 'string', 'max:30'],
+            'is_admission_open' => ['nullable', 'boolean'],
+        ]);
+
+        $school->update([
+            'slug' => $validated['slug'],
+            'academic_year' => $validated['academic_year'],
+            'is_admission_open' => $request->boolean('is_admission_open'),
+        ]);
+
+        return back()->with('success', 'Online admission portal settings updated successfully!');
     }
 
     /**

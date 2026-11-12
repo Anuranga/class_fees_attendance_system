@@ -52,7 +52,10 @@ class UniformController extends Controller
 
         $orders = $query->paginate(20);
         $school = SchoolSetting::get();
-        $items = UniformItem::where('is_active', true)->get();
+        $items = UniformItem::where('is_active', true)
+            ->where(function ($q) use ($school) {
+                $q->where('school_setting_id', $school->id)->orWhereNull('school_setting_id');
+            })->get();
 
         // Students in accessible classes for creating orders
         $students = Student::whereHas('classes', function ($q) use ($classIds) {
@@ -60,11 +63,11 @@ class UniformController extends Controller
         })->orderBy('full_name')->get();
 
         $summary = [
-            'total_orders' => UniformOrder::count(),
-            'paid_amount' => UniformOrder::where('payment_status', 'paid')->sum('total_amount'),
-            'pending_amount' => UniformOrder::where('payment_status', 'pending')->sum('total_amount'),
-            'ready_for_delivery' => UniformOrder::where('delivery_status', 'ready')->count(),
-            'delivered' => UniformOrder::where('delivery_status', 'delivered')->count(),
+            'total_orders' => UniformOrder::whereIn('class_id', $classIds)->count(),
+            'paid_amount' => UniformOrder::whereIn('class_id', $classIds)->where('payment_status', 'paid')->sum('total_amount'),
+            'pending_amount' => UniformOrder::whereIn('class_id', $classIds)->where('payment_status', 'pending')->sum('total_amount'),
+            'ready_for_delivery' => UniformOrder::whereIn('class_id', $classIds)->where('delivery_status', 'ready')->count(),
+            'delivered' => UniformOrder::whereIn('class_id', $classIds)->where('delivery_status', 'delivered')->count(),
         ];
 
         return view('teacher.uniforms.index', compact('orders', 'classes', 'selectedClassId', 'paymentStatus', 'deliveryStatus', 'school', 'items', 'students', 'summary'));
@@ -176,7 +179,16 @@ class UniformController extends Controller
             'description' => ['nullable', 'string', 'max:500'],
         ]);
 
-        UniformItem::create($validated);
+        $school = SchoolSetting::get();
+
+        UniformItem::create([
+            'school_setting_id' => $school->id,
+            'name' => $validated['name'],
+            'size_options' => $validated['size_options'] ?? null,
+            'price' => $validated['price'],
+            'description' => $validated['description'] ?? null,
+            'is_active' => true,
+        ]);
 
         return back()->with('success', "Uniform item '{$validated['name']}' added to school catalog!");
     }

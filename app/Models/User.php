@@ -22,6 +22,7 @@ class User extends Authenticatable
     ];
 
     protected $fillable = [
+        'school_setting_id',
         'name',
         'email',
         'password',
@@ -45,6 +46,11 @@ class User extends Authenticatable
             'can_collect_fees' => 'boolean',
             'can_manage_uniforms' => 'boolean',
         ];
+    }
+
+    public function school(): BelongsTo
+    {
+        return $this->belongsTo(SchoolSetting::class, 'school_setting_id');
     }
 
     public function isAdmin(): bool

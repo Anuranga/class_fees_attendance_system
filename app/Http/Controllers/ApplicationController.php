@@ -19,11 +19,13 @@ class ApplicationController extends Controller
     {
         $school = null;
         if ($token) {
-            $school = SchoolSetting::where('registration_token', $token)->first();
+            $school = SchoolSetting::where('registration_token', $token)
+                ->orWhere('slug', $token)
+                ->first();
         }
 
         if (! $school) {
-            $school = SchoolSetting::get();
+            $school = SchoolSetting::first() ?? SchoolSetting::get();
         }
 
         return view('public.apply', compact('school', 'token'));
@@ -36,10 +38,12 @@ class ApplicationController extends Controller
     {
         $school = null;
         if ($token) {
-            $school = SchoolSetting::where('registration_token', $token)->first();
+            $school = SchoolSetting::where('registration_token', $token)
+                ->orWhere('slug', $token)
+                ->first();
         }
         if (! $school) {
-            $school = SchoolSetting::get();
+            $school = SchoolSetting::first() ?? SchoolSetting::get();
         }
 
         if (! $school->is_admission_open) {

@@ -43,6 +43,21 @@ class SchoolSetting extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function staff(): HasMany
+    {
+        return $this->hasMany(User::class, 'school_setting_id');
+    }
+
+    public function classes(): HasMany
+    {
+        return $this->hasMany(ClassRoom::class, 'school_setting_id');
+    }
+
+    public function uniformItems(): HasMany
+    {
+        return $this->hasMany(UniformItem::class, 'school_setting_id');
+    }
+
     public function applications(): HasMany
     {
         return $this->hasMany(Application::class, 'school_setting_id');
@@ -82,6 +97,24 @@ class SchoolSetting extends Model
         $user = $user ?? Auth::user();
 
         if ($user) {
+            // 1. If user already has an explicit school_setting_id
+            if ($user->school_setting_id) {
+                $school = static::find($user->school_setting_id);
+                if ($school) {
+                    if (empty($school->registration_token)) {
+                        $school->registration_token = Str::random(24);
+                        $school->save();
+                    }
+                    if (empty($school->slug)) {
+                        $school->slug = Str::slug($school->name).'-'.Str::random(4);
+                        $school->save();
+                    }
+
+                    return $school;
+                }
+            }
+
+            // 2. Owned by user (Principal / Admin)
             $principalId = $user->isAdmin() ? $user->id : ($user->teacher_id ?: $user->id);
             $school = static::where('user_id', $principalId)->first();
             if ($school) {
@@ -89,15 +122,75 @@ class SchoolSetting extends Model
                     $school->registration_token = Str::random(24);
                     $school->save();
                 }
+                if (empty($school->slug)) {
+                    $school->slug = Str::slug($school->name).'-'.Str::random(4);
+                    $school->save();
+                }
+                if ($user->school_setting_id !== $school->id) {
+                    $user->update(['school_setting_id' => $school->id]);
+                }
+
+                return $school;
+            }
+
+            // 3. Claim any unclaimed legacy school if this is an admin
+            if ($user->isAdmin()) {
+                $unclaimed = static::whereNull('user_id')->first();
+                if ($unclaimed) {
+                    $unclaimed->update(['user_id' => $user->id]);
+                    $user->update(['school_setting_id' => $unclaimed->id]);
+
+                    return $unclaimed;
+                }
+            }
+
+            // 4. If authenticated user is an Admin/Principal and has no school, create a dedicated one for this Principal
+            if ($user->isAdmin()) {
+                $schoolName = $user->name."'s Pre-School";
+                $school = static::create([
+                    'user_id' => $user->id,
+                    'name' => $schoolName,
+                    'motto' => 'Nurturing Little Minds for a Brighter Tomorrow',
+                    'slug' => Str::slug($user->name.'-preschool').'-'.Str::random(4),
+                    'registration_token' => Str::random(24),
+                    'vision' => 'To be a center of early childhood educational excellence where every child discovers joy in learning, creativity, and self-confidence.',
+                    'mission' => 'We provide a loving, safe, and stimulating environment guided by holistic early learning methodologies, empowering every child through play, exploration, and character foundation.',
+                    'about_us' => "Welcome to {$schoolName}. We offer quality pre-school education and child care.",
+                    'principal_message' => "Welcome to {$schoolName}! Every child is unique and full of potential.",
+                    'items_to_bring_sinhala' => static::defaultSinhalaItems(),
+                    'contact_phone' => '+94 77 123 4567',
+                    'whatsapp_number' => '+94 77 123 4567',
+                    'contact_email' => $user->email,
+                    'address' => 'Colombo, Sri Lanka',
+                    'academic_year' => date('Y').'/'.(date('Y') + 1),
+                    'is_admission_open' => true,
+                ]);
+
+                $user->update(['school_setting_id' => $school->id]);
 
                 return $school;
             }
         }
 
         // Return first or create default
-        $school = static::firstOrCreate([], [
+        $school = static::first();
+        if ($school) {
+            if (empty($school->registration_token)) {
+                $school->registration_token = Str::random(24);
+                $school->save();
+            }
+            if (empty($school->slug)) {
+                $school->slug = Str::slug($school->name).'-'.Str::random(4);
+                $school->save();
+            }
+
+            return $school;
+        }
+
+        return static::create([
             'name' => 'Little Stars International Pre-School',
             'motto' => 'Nurturing Little Minds for a Brighter Tomorrow',
+            'slug' => 'little-stars-preschool',
             'registration_token' => Str::random(24),
             'vision' => 'To be a center of early childhood educational excellence where every child discovers joy in learning, creativity, and self-confidence.',
             'mission' => 'We provide a loving, safe, and stimulating environment guided by holistic early learning methodologies, empowering every child through play, exploration, and character foundation.',
@@ -111,19 +204,17 @@ class SchoolSetting extends Model
             'academic_year' => '2026/2027',
             'is_admission_open' => true,
         ]);
-
-        if (empty($school->registration_token)) {
-            $school->registration_token = Str::random(24);
-            $school->save();
-        }
-
-        return $school;
     }
 
     /**
      * Sharable Registration URL for WhatsApp.
      */
     public function getRegistrationUrlAttribute(): string
+    {
+        return url('/apply/'.($this->slug ?: $this->registration_token));
+    }
+
+    public function getTokenRegistrationUrlAttribute(): string
     {
         return url('/apply/'.$this->registration_token);
     }
