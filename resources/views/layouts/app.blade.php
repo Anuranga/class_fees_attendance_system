@@ -156,6 +156,14 @@
                         <span>Cash Collection & Fees</span>
                     </a>
 
+                    @if(Auth::user()->canManageUniforms())
+                        <a href="{{ route('teacher.uniforms.index') }}" 
+                           class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all {{ request()->routeIs('teacher.uniforms.*') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                            <i class="fa-solid fa-shirt w-5 text-center text-base text-pink-400"></i>
+                            <span>Uniforms & Delivery</span>
+                        </a>
+                    @endif
+
                     <a href="{{ route('teacher.daily.sheet') }}" 
                        class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all {{ request()->routeIs('teacher.daily.sheet') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                         <i class="fa-solid fa-calendar-check w-5 text-center text-base text-emerald-400"></i>

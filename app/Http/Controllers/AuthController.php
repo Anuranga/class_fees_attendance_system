@@ -39,17 +39,30 @@ class AuthController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:6', 'confirmed'],
+            'role' => ['nullable', 'string', 'in:teacher,principal'],
         ]);
+
+        $role = $validated['role'] ?? 'teacher';
+
+        // If registering as Principal, and no other admin/principal exists, activate immediately; otherwise set pending or active
+        $hasExistingPrincipal = User::whereIn('role', ['admin', 'principal'])->exists();
+        $status = ($role === 'principal' && ! $hasExistingPrincipal) ? 'active' : 'pending';
 
         User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
-            'role' => 'teacher',
-            'status' => 'pending',
+            'role' => $role === 'principal' ? 'admin' : 'teacher',
+            'status' => $status,
+            'can_collect_fees' => $role === 'principal',
+            'can_manage_uniforms' => $role === 'principal',
         ]);
 
-        return redirect()->route('login')->with('success', 'Your teacher account has been registered successfully! It is currently pending administrator approval before you can sign in.');
+        $successMsg = ($status === 'active')
+            ? 'Principal account created and activated successfully! You can now log in.'
+            : 'Your account has been registered successfully! It is currently pending administrator verification before sign in.';
+
+        return redirect()->route('login')->with('success', $successMsg);
     }
 
     public function login(Request $request): RedirectResponse

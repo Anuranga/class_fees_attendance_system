@@ -53,6 +53,8 @@ class AssistantController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:6'],
+            'can_collect_fees' => ['nullable', 'boolean'],
+            'can_manage_uniforms' => ['nullable', 'boolean'],
             'class_ids' => ['nullable', 'array'],
             'class_ids.*' => ['integer', 'exists:classes,id'],
         ]);
@@ -70,6 +72,8 @@ class AssistantController extends Controller
             'role' => 'assistant',
             'status' => 'active',
             'teacher_id' => $teacher->id,
+            'can_collect_fees' => $request->boolean('can_collect_fees'),
+            'can_manage_uniforms' => $request->boolean('can_manage_uniforms'),
             'email_verified_at' => now(),
         ]);
 
@@ -88,6 +92,8 @@ class AssistantController extends Controller
         $validated = $request->validate([
             'class_ids' => ['nullable', 'array'],
             'class_ids.*' => ['integer', 'exists:classes,id'],
+            'can_collect_fees' => ['nullable', 'boolean'],
+            'can_manage_uniforms' => ['nullable', 'boolean'],
         ]);
 
         $teacherId = $assistant->teacher_id ?: Auth::user()->effectiveTeacherId();
@@ -96,6 +102,11 @@ class AssistantController extends Controller
             ->whereIn('id', $validated['class_ids'] ?? [])
             ->pluck('id')
             ->toArray();
+
+        $assistant->update([
+            'can_collect_fees' => $request->boolean('can_collect_fees'),
+            'can_manage_uniforms' => $request->boolean('can_manage_uniforms'),
+        ]);
 
         $assistant->assignedClasses()->sync($validClassIds);
 

@@ -122,7 +122,7 @@
                                 @click="openEditClasses({{ $assistant->id }}, '{{ addslashes($assistant->name) }}', {{ json_encode($assignedClassIds) }})"
                                 class="px-3 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer">
                             <i class="fa-solid fa-list-check"></i>
-                            <span>Classes</span>
+                            <span>Classes & Permissions</span>
                         </button>
 
                         <form action="{{ route('teacher.assistants.toggle-status', $assistant) }}" method="POST">
@@ -222,6 +222,20 @@
                 <!-- Assign Classes Checkboxes -->
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+                        Special Pre-School Collection Permissions
+                    </label>
+                    <div class="space-y-2 p-3 rounded-xl bg-slate-50 border border-slate-200 mb-3">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" name="can_collect_fees" value="1" class="w-4 h-4 rounded text-indigo-600 border-slate-300">
+                            <span class="text-xs font-semibold text-slate-800">Authorized to collect student tuition and activity cash fees</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" name="can_manage_uniforms" value="1" class="w-4 h-4 rounded text-pink-600 border-slate-300">
+                            <span class="text-xs font-semibold text-slate-800">Authorized to manage uniforms, take money & mark delivery</span>
+                        </label>
+                    </div>
+
+                    <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
                         Select & Assign Classes
                     </label>
                     <p class="text-[11px] text-slate-500 mb-2">This assistant will ONLY be able to view and manage the classes selected below:</p>
@@ -293,6 +307,22 @@
             <form :action="'{{ url('/teacher/assistants') }}/' + editingAssistantId + '/classes'" method="POST" class="mt-5 space-y-4">
                 @csrf
                 @method('PUT')
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+                        Assigned Role Permissions
+                    </label>
+                    <div class="space-y-2 p-3 rounded-xl bg-slate-50 border border-slate-200">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" name="can_collect_fees" value="1" class="w-4 h-4 rounded text-indigo-600 border-slate-300">
+                            <span class="text-xs font-semibold text-slate-800">Assign to collect money & record cash fees</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" name="can_manage_uniforms" value="1" class="w-4 h-4 rounded text-pink-600 border-slate-300">
+                            <span class="text-xs font-semibold text-slate-800">Assign to collect uniform money & deliver uniforms</span>
+                        </label>
+                    </div>
+                </div>
 
                 @if($classes->isNotEmpty())
                     <div class="max-h-64 overflow-y-auto rounded-xl border border-slate-200 divide-y divide-slate-100 bg-slate-50/50">

@@ -12,6 +12,7 @@ use App\Http\Controllers\Teacher\AttendanceController as TeacherAttendanceContro
 use App\Http\Controllers\Teacher\ClassController as TeacherClassController;
 use App\Http\Controllers\Teacher\DashboardController as TeacherDashboardController;
 use App\Http\Controllers\Teacher\FeeController as TeacherFeeController;
+use App\Http\Controllers\Teacher\UniformController as TeacherUniformController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 
@@ -84,6 +85,13 @@ Route::middleware(['auth', 'role:teacher'])->prefix('teacher')->name('teacher.')
     Route::post('/fees/collect', [TeacherFeeController::class, 'collect'])->name('fees.collect');
     Route::get('/fees/receipt/{payment}', [TeacherFeeController::class, 'receipt'])->name('fees.receipt');
     Route::delete('/fees/{payment}', [TeacherFeeController::class, 'destroy'])->name('fees.destroy');
+
+    // Uniform Orders & Delivery Tracking (With Sinhala Messages)
+    Route::get('/uniforms', [TeacherUniformController::class, 'index'])->name('uniforms.index');
+    Route::post('/uniforms', [TeacherUniformController::class, 'store'])->name('uniforms.store');
+    Route::post('/uniforms/{order}/pay', [TeacherUniformController::class, 'markPayment'])->name('uniforms.pay');
+    Route::post('/uniforms/{order}/deliver', [TeacherUniformController::class, 'markDelivery'])->name('uniforms.deliver');
+    Route::post('/uniforms/items', [TeacherUniformController::class, 'storeItem'])->name('uniforms.items.store');
 
     // Teaching Assistants Management
     Route::get('/assistants', [TeacherAssistantController::class, 'index'])->name('assistants.index');

@@ -28,11 +28,13 @@ class User extends Authenticatable
         'role',
         'status',
         'teacher_id',
+        'can_collect_fees',
+        'can_manage_uniforms',
     ];
 
-    protected $hidden = [
-        'password',
-        'remember_token',
+    protected $casts = [
+        'can_collect_fees' => 'boolean',
+        'can_manage_uniforms' => 'boolean',
     ];
 
     protected function casts(): array
@@ -40,12 +42,29 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'can_collect_fees' => 'boolean',
+            'can_manage_uniforms' => 'boolean',
         ];
     }
 
     public function isAdmin(): bool
     {
-        return $this->role === 'admin';
+        return $this->role === 'admin' || $this->role === 'principal';
+    }
+
+    public function isPrincipal(): bool
+    {
+        return $this->isAdmin();
+    }
+
+    public function canCollectFees(): bool
+    {
+        return $this->isAdmin() || (bool) $this->can_collect_fees;
+    }
+
+    public function canManageUniforms(): bool
+    {
+        return $this->isAdmin() || (bool) $this->can_manage_uniforms;
     }
 
     public function isTeacher(): bool

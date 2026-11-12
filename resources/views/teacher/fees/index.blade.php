@@ -30,6 +30,16 @@
             <input type="month" name="month" value="{{ $selectedMonth }}" 
                    class="px-3.5 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20">
 
+            <!-- Category Filter -->
+            <select name="category" class="px-3.5 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20">
+                <option value="all" {{ $selectedCategory === 'all' ? 'selected' : '' }}>All Fee Categories</option>
+                @foreach($categories as $catKey => $catLabel)
+                    <option value="{{ $catKey }}" {{ $selectedCategory === $catKey ? 'selected' : '' }}>
+                        {{ $catLabel }}
+                    </option>
+                @endforeach
+            </select>
+
             <!-- Status Filter -->
             <select name="status" class="px-3.5 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20">
                 <option value="all" {{ $selectedStatus === 'all' ? 'selected' : '' }}>All Statuses</option>
@@ -233,6 +243,17 @@
                             <option value="{{ $c->id }}" data-fee="{{ $c->monthly_fee }}">
                                 {{ $c->name }} ({{ $c->grade_level }}) - LKR {{ number_format($c->monthly_fee, 2) }}
                             </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <!-- Fee Category -->
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Fee Category *</label>
+                    <select name="category" required
+                            class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 text-slate-800 text-sm font-semibold">
+                        @foreach($categories as $catKey => $catLabel)
+                            <option value="{{ $catKey }}">{{ $catLabel }}</option>
                         @endforeach
                     </select>
                 </div>

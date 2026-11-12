@@ -28,8 +28,28 @@
             </div>
         @endif
 
-        <form action="{{ route('register.post') }}" method="POST" class="space-y-4">
+        <form action="{{ route('register.post') }}" method="POST" class="space-y-4" x-data="{ selectedRole: 'teacher' }">
             @csrf
+
+            <!-- Role Selector: Principal vs Teacher -->
+            <div>
+                <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Registering As *</label>
+                <div class="grid grid-cols-2 gap-3">
+                    <label class="cursor-pointer border-2 rounded-xl p-3 flex items-center gap-2.5 transition-all"
+                           :class="selectedRole === 'principal' ? 'border-amber-400 bg-amber-950/40 text-amber-200' : 'border-slate-700 bg-slate-900 text-slate-400'">
+                        <input type="radio" name="role" value="principal" x-model="selectedRole" class="sr-only">
+                        <i class="fa-solid fa-crown text-amber-400"></i>
+                        <span class="text-xs font-bold">Principal / Admin</span>
+                    </label>
+
+                    <label class="cursor-pointer border-2 rounded-xl p-3 flex items-center gap-2.5 transition-all"
+                           :class="selectedRole === 'teacher' ? 'border-indigo-400 bg-indigo-950/40 text-indigo-200' : 'border-slate-700 bg-slate-900 text-slate-400'">
+                        <input type="radio" name="role" value="teacher" x-model="selectedRole" class="sr-only">
+                        <i class="fa-solid fa-chalkboard-user text-indigo-400"></i>
+                        <span class="text-xs font-bold">Teacher</span>
+                    </label>
+                </div>
+            </div>
 
             <!-- Full Name -->
             <div>

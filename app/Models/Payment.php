@@ -23,6 +23,7 @@ class Payment extends Model
         'student_id',
         'teacher_id',
         'payment_type',
+        'category',
         'collected_by',
         'amount',
         'payment_month',

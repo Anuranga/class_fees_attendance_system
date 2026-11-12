@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ClassRoom;
 use App\Models\ClassStudent;
 use App\Models\Payment;
+use App\Models\SchoolSetting;
 use App\Models\Student;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
@@ -27,6 +28,7 @@ class FeeController extends Controller
         $selectedClassId = $request->query('class_id');
         $selectedMonth = $request->query('month', Carbon::now()->format('Y-m'));
         $selectedStatus = $request->query('status', 'all'); // 'all', 'paid', 'pending'
+        $selectedCategory = $request->query('category', 'all'); // 'all', 'monthly_tuition', 'admission', 'books_stationery', 'uniforms', 'events'
 
         if ($selectedClassId && in_array((int) $selectedClassId, $classIds, true)) {
             $targetClassIds = [(int) $selectedClassId];
@@ -43,10 +45,16 @@ class FeeController extends Controller
 
         $enrollments = $enrollmentsQuery->get();
 
-        // Get all payments for these classes in the selected month
-        $payments = Payment::whereIn('class_id', $targetClassIds)
-            ->where('payment_month', $selectedMonth)
-            ->get()
+        // Get payments query
+        $paymentsQuery = Payment::whereIn('class_id', $targetClassIds);
+        if ($selectedCategory === 'monthly_tuition' || $selectedCategory === 'all') {
+            $paymentsQuery->where('payment_month', $selectedMonth);
+        }
+        if ($selectedCategory !== 'all') {
+            $paymentsQuery->where('category', $selectedCategory);
+        }
+
+        $payments = $paymentsQuery->get()
             ->keyBy(function ($p) {
                 return $p->class_id.'_'.$p->student_id;
             });
@@ -87,11 +95,22 @@ class FeeController extends Controller
             ->limit(10)
             ->get();
 
+        $categories = [
+            'monthly_tuition' => 'Monthly Tuition Fee',
+            'admission' => 'Admission / Registration Fee',
+            'uniforms' => 'Uniform & Merchandise Fee',
+            'books_stationery' => 'Books & Activity Kits',
+            'daycare' => 'Daycare / Extended Care Fee',
+            'events' => 'Events / Trips / Concert Fee',
+        ];
+
         return view('teacher.fees.index', [
             'classes' => $classes,
             'selectedClassId' => $selectedClassId,
             'selectedMonth' => $selectedMonth,
             'selectedStatus' => $selectedStatus,
+            'selectedCategory' => $selectedCategory,
+            'categories' => $categories,
             'feeRecords' => $feeRecords,
             'totalPotential' => $totalPotential,
             'totalCollected' => $totalCollected,
@@ -109,10 +128,12 @@ class FeeController extends Controller
     public function collect(Request $request): RedirectResponse
     {
         $paymentType = $request->input('payment_type', 'monthly');
+        $category = $request->input('category', 'monthly_tuition');
 
         $validated = $request->validate([
             'class_id' => ['required', 'exists:classes,id'],
             'student_id' => ['required', 'exists:students,id'],
+            'category' => ['nullable', 'string', 'max:60'],
             'payment_type' => ['nullable', 'in:monthly,daily'],
             'payment_month' => [$paymentType === 'daily' ? 'nullable' : 'required', 'regex:/^\d{4}-(0[1-9]|1[0-2])$/'],
             'amount' => ['required', 'numeric', 'min:0'],
@@ -153,6 +174,7 @@ class FeeController extends Controller
             'teacher_id' => $teacherId,
             'collected_by' => Auth::id(),
             'payment_type' => $paymentType,
+            'category' => $category,
             'amount' => $validated['amount'],
             'payment_month' => $paymentMonth,
             'paid_date' => $paidDate,
@@ -183,13 +205,26 @@ class FeeController extends Controller
         $amount = number_format($payment->amount, 2);
         $receiptNo = $payment->receipt_no;
         $teacherName = $payment->classRoom->teacher->name;
+        $school = SchoolSetting::get();
+        $schoolName = $school->name;
 
-        $messageText = "Payment Receipt Notification:\n"
-            ."Dear Parent/Guardian,\n"
-            ."We have received {$amount} cash fee for {$studentName} ({$className}) for {$month}.\n"
-            ."Receipt No: {$receiptNo}\n"
-            ."Instructor: {$teacherName}\n"
-            .'Thank you!';
+        // Sinhala / Bilingual Friendly WhatsApp & SMS format
+        $categoryLabel = match ($payment->category) {
+            'uniforms' => 'නිල ඇඳුම් ගාස්තු (Uniform Fee)',
+            'admission' => 'ඇතුළත් වීමේ ගාස්තු (Admission Fee)',
+            'books_stationery' => 'පොත් සහ උපකරණ ගාස්තු (Books & Kits)',
+            'daycare' => 'දිවා සුරැකුම් ගාස්තු (Daycare Fee)',
+            'events' => 'විශේෂ උත්සව ගාස්තු (Event/Concert Fee)',
+            default => 'මාසික පාසල් ගාස්තු (Monthly Tuition Fee)',
+        };
+
+        $messageText = "ගෙවීම් තහවුරු කිරීමේ නිල ලදුපත:\n"
+            ."{$schoolName}\n"
+            ."ගරු දෙමාපියනි,\n"
+            ."ඔබගේ දරුවා වන {$studentName} වෙනුවෙන් {$categoryLabel} ලෙස රු. {$amount}/- මුදල සාර්ථකව ලැබී ඇත.\n"
+            ."ලදුපත් අංකය: {$receiptNo}\n"
+            .'දිනය: '.($payment->paid_date ? $payment->paid_date->format('Y-m-d') : date('Y-m-d'))."\n"
+            .'ස්තූතියි!';
 
         // Clean guardian phone for WhatsApp link
         $guardianPhoneClean = preg_replace('/[^0-9]/', '', $payment->student->guardian_phone);
