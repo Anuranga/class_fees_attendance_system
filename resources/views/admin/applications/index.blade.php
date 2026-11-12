@@ -56,13 +56,24 @@
 
         <!-- Sharable WhatsApp Admission Link Pill -->
         <div class="flex items-center gap-2" x-data="{ copied: false }">
-            <span class="text-xs text-slate-500 font-semibold hidden md:inline">Public Admission Form:</span>
-            <button @click="navigator.clipboard.writeText('{{ route('public.apply') }}'); copied = true; setTimeout(() => copied = false, 2500)"
+            <span class="text-xs text-slate-500 font-semibold hidden md:inline">Admission Form Link:</span>
+            <button @click="navigator.clipboard.writeText('{{ $school->registration_url }}'); copied = true; setTimeout(() => copied = false, 2500)"
+                    type="button"
                     class="px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs"
                     :class="copied ? 'bg-emerald-600 text-white' : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200'">
-                <i :class="copied ? 'fa-solid fa-check' : 'fa-brands fa-whatsapp text-emerald-600'"></i>
-                <span x-text="copied ? 'Copied Link!' : 'Copy Form Link for WhatsApp'"></span>
+                <i :class="copied ? 'fa-solid fa-check' : 'fa-solid fa-copy text-emerald-600'"></i>
+                <span x-text="copied ? 'Copied Link!' : 'Copy WhatsApp Form Link'"></span>
             </button>
+
+            @php
+                $waShareText = "පෙරපාසල් නව ළමුන් ඇතුළත් කිරීම් සඳහා වන අයදුම්පත මෙතැනින් සම්පූර්ණ කරන්න:\n" . $school->registration_url;
+            @endphp
+            <a href="https://wa.me/?text={{ urlencode($waShareText) }}" target="_blank"
+               class="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs"
+               title="Share on WhatsApp">
+                <i class="fa-brands fa-whatsapp text-sm"></i>
+                <span class="hidden sm:inline">Share on WhatsApp</span>
+            </a>
         </div>
     </div>
 

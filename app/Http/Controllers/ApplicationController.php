@@ -15,19 +15,32 @@ class ApplicationController extends Controller
     /**
      * Show the public online admission application form (designed for WhatsApp distribution).
      */
-    public function create(): View
+    public function create(?string $token = null): View
     {
-        $school = SchoolSetting::get();
+        $school = null;
+        if ($token) {
+            $school = SchoolSetting::where('registration_token', $token)->first();
+        }
 
-        return view('public.apply', compact('school'));
+        if (! $school) {
+            $school = SchoolSetting::get();
+        }
+
+        return view('public.apply', compact('school', 'token'));
     }
 
     /**
      * Store a submitted application.
      */
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, ?string $token = null): RedirectResponse
     {
-        $school = SchoolSetting::get();
+        $school = null;
+        if ($token) {
+            $school = SchoolSetting::where('registration_token', $token)->first();
+        }
+        if (! $school) {
+            $school = SchoolSetting::get();
+        }
 
         if (! $school->is_admission_open) {
             return back()->with('error', 'Online admissions are currently closed for this academic period.');
@@ -76,9 +89,10 @@ class ApplicationController extends Controller
         $appNumber = Application::generateApplicationNumber();
 
         $application = Application::create([
+            'school_setting_id' => $school->id,
             'application_number' => $appNumber,
             'child_full_name' => $validated['child_full_name'],
-            'child_calling_name' => $validated['child_calling_name'],
+            'child_calling_name' => $validated['child_calling_name'] ?? null,
             'date_of_birth' => $validated['date_of_birth'],
             'gender' => $validated['gender'],
             'blood_group' => $validated['blood_group'] ?? null,

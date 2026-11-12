@@ -22,8 +22,11 @@ class ApplicationManagementController extends Controller
     {
         $status = $request->query('status', 'all');
         $search = $request->query('search');
+        $school = SchoolSetting::get();
 
-        $query = Application::with(['assignedClass', 'student'])->latest();
+        $query = Application::with(['assignedClass', 'student'])
+            ->where('school_setting_id', $school->id)
+            ->latest();
 
         if ($status !== 'all') {
             $query->where('status', $status);
@@ -39,14 +42,14 @@ class ApplicationManagementController extends Controller
 
         $applications = $query->paginate(15);
         $counts = [
-            'all' => Application::count(),
-            'pending' => Application::where('status', 'pending')->count(),
-            'approved' => Application::where('status', 'approved')->count(),
-            'enrolled' => Application::where('status', 'enrolled')->count(),
-            'rejected' => Application::where('status', 'rejected')->count(),
+            'all' => Application::where('school_setting_id', $school->id)->count(),
+            'pending' => Application::where('school_setting_id', $school->id)->where('status', 'pending')->count(),
+            'approved' => Application::where('school_setting_id', $school->id)->where('status', 'approved')->count(),
+            'enrolled' => Application::where('school_setting_id', $school->id)->where('status', 'enrolled')->count(),
+            'rejected' => Application::where('school_setting_id', $school->id)->where('status', 'rejected')->count(),
         ];
 
-        return view('admin.applications.index', compact('applications', 'status', 'search', 'counts'));
+        return view('admin.applications.index', compact('applications', 'status', 'search', 'counts', 'school'));
     }
 
     /**

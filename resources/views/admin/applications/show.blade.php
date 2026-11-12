@@ -5,6 +5,15 @@
 @section('page-subtitle', 'Principal & Administrative Review for ' . $application->child_full_name)
 
 @section('content')
+@php
+    $cleanWa = preg_replace('/[^0-9]/', '', $application->whatsapp_number);
+    if (str_starts_with($cleanWa, '0') && strlen($cleanWa) === 10) {
+        $cleanWa = '94' . substr($cleanWa, 1);
+    }
+    $sinhalaMessage = $application->getSinhalaSelectionMessage();
+    $waSelectionLink = "https://wa.me/{$cleanWa}?text=" . urlencode($sinhalaMessage);
+@endphp
+
 <div class="space-y-6">
 
     <!-- Top Action & Navigation Bar -->
@@ -16,26 +25,13 @@
         </a>
 
         <!-- Pre-generated WhatsApp Link for Principal -->
-        @php
-            $cleanWa = preg_replace('/[^0-9]/', '', $application->whatsapp_number);
-            $schoolName = $school->name;
-            $childName = $application->child_full_name;
-            $waMessage = "Hello Parent,\nThis is {$schoolName}.\nRegarding the admission application for {$childName} ({$application->application_number}):\n";
-            if ($application->status === 'enrolled') {
-                $waMessage .= "Congratulations! Your child has been selected and officially enrolled. You can view & download their official QR ID Pass at: " . route('public.apply.status', ['query' => $application->application_number]);
-            } elseif ($application->status === 'interview_scheduled') {
-                $waMessage .= "We are pleased to invite you and your child for a brief friendly interaction / interview. Please contact the school office to confirm your appointment.";
-            } else {
-                $waMessage .= "We have received your application and it is currently being reviewed by our Principal.";
-            }
-            $waLink = "https://wa.me/{$cleanWa}?text=" . urlencode($waMessage);
-        @endphp
-
-        <a href="{{ $waLink }}" target="_blank"
-           class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md shadow-emerald-600/30 flex items-center justify-center gap-2 transition-all">
-            <i class="fa-brands fa-whatsapp text-sm"></i>
-            <span>Send WhatsApp Update to Parent</span>
-        </a>
+        <div class="flex items-center gap-2">
+            <a href="{{ $waSelectionLink }}" target="_blank"
+               class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md shadow-emerald-600/30 flex items-center justify-center gap-2 transition-all">
+                <i class="fa-brands fa-whatsapp text-sm"></i>
+                <span>Send WhatsApp Selection Message</span>
+            </a>
+        </div>
     </div>
 
     <!-- Application Details Card -->
@@ -117,14 +113,12 @@
                         <span class="text-[11px] font-bold text-slate-400 uppercase">Father</span>
                         <p class="font-bold text-slate-900 text-sm">{{ $application->father_name ?: 'N/A' }}</p>
                         <p class="text-slate-600">Phone: <span class="font-mono">{{ $application->father_phone ?: 'N/A' }}</span></p>
-                        <p class="text-slate-500">Occupation: {{ $application->father_occupation ?: 'N/A' }}</p>
                     </div>
 
                     <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-100 space-y-1">
                         <span class="text-[11px] font-bold text-slate-400 uppercase">Mother</span>
                         <p class="font-bold text-slate-900 text-sm">{{ $application->mother_name ?: 'N/A' }}</p>
                         <p class="text-slate-600">Phone: <span class="font-mono">{{ $application->mother_phone ?: 'N/A' }}</span></p>
-                        <p class="text-slate-500">Occupation: {{ $application->mother_occupation ?: 'N/A' }}</p>
                     </div>
 
                     <div class="sm:col-span-2 p-3.5 rounded-xl bg-emerald-50/60 border border-emerald-200/80 flex items-center justify-between">
@@ -136,7 +130,7 @@
                             @endif
                         </div>
                         <a href="https://wa.me/{{ $cleanWa }}" target="_blank" class="px-3 py-1.5 rounded-lg bg-emerald-600 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs">
-                            <i class="fa-brands fa-whatsapp"></i> Chat
+                            <i class="fa-brands fa-whatsapp"></i> Chat on WhatsApp
                         </a>
                     </div>
 
@@ -144,6 +138,40 @@
                         <span class="text-slate-400 block text-[11px] font-bold uppercase">Permanent Home Address</span>
                         <p class="text-slate-700 mt-0.5">{{ $application->home_address }}</p>
                     </div>
+                </div>
+            </div>
+
+            <!-- Descriptive Sinhala Selection & Checklist Message Preview Card -->
+            <div class="rounded-2xl bg-white border border-slate-200/80 p-6 shadow-xs space-y-4" x-data="{ copied: false }">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-brands fa-whatsapp text-emerald-600 text-lg"></i>
+                        <h3 class="text-sm font-extrabold uppercase tracking-wider text-slate-800">
+                            Pre-School Selection Message (Sinhala &amp; Checklist)
+                        </h3>
+                    </div>
+
+                    <button @click="navigator.clipboard.writeText($refs.sinhalaText.value); copied = true; setTimeout(() => copied = false, 2500)"
+                            class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5"
+                            :class="copied ? 'bg-emerald-600 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'">
+                        <i :class="copied ? 'fa-solid fa-check' : 'fa-solid fa-copy'"></i>
+                        <span x-text="copied ? 'Copied Text!' : 'Copy Message'"></span>
+                    </button>
+                </div>
+
+                <p class="text-xs text-slate-500">
+                    This official message confirms the child's selection, includes the checklist of required items to bring on day one, and provides the direct link to the child's QR ID Card pass.
+                </p>
+
+                <textarea x-ref="sinhalaText" rows="12" readonly
+                          class="w-full p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs font-sans text-slate-800 leading-relaxed font-medium focus:ring-0">{{ $sinhalaMessage }}</textarea>
+
+                <div class="flex items-center justify-end gap-3 pt-2">
+                    <a href="{{ $waSelectionLink }}" target="_blank"
+                       class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md shadow-emerald-600/30 flex items-center gap-2 transition-all">
+                        <i class="fa-brands fa-whatsapp text-sm"></i>
+                        <span>Send to {{ $application->whatsapp_number }} on WhatsApp</span>
+                    </a>
                 </div>
             </div>
 
@@ -173,7 +201,7 @@
                         </div>
                         @if($enrollment)
                             <a href="{{ route('public.pass', $enrollment->qr_token) }}" target="_blank"
-                               class="w-full px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center justify-center gap-2 transition-all">
+                               class="w-full px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-xs">
                                 <i class="fa-solid fa-id-card"></i>
                                 <span>Open Child's 3.7" &times; 2.6" QR Pass</span>
                             </a>
@@ -250,4 +278,3 @@
 
 </div>
 @endsection
-

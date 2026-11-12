@@ -34,6 +34,8 @@ class SchoolSettingController extends Controller
             'contact_email' => ['nullable', 'email', 'max:100'],
             'address' => ['nullable', 'string', 'max:500'],
             'academic_year' => ['nullable', 'string', 'max:30'],
+            'items_to_bring_sinhala' => ['nullable', 'string', 'max:5000'],
+            'items_to_bring_english' => ['nullable', 'string', 'max:5000'],
             'is_admission_open' => ['nullable', 'boolean'],
         ]);
 
@@ -50,6 +52,8 @@ class SchoolSettingController extends Controller
             'mission' => $validated['mission'] ?? null,
             'about_us' => $validated['about_us'] ?? null,
             'principal_message' => $validated['principal_message'] ?? null,
+            'items_to_bring_sinhala' => $validated['items_to_bring_sinhala'] ?? null,
+            'items_to_bring_english' => $validated['items_to_bring_english'] ?? null,
             'contact_phone' => $validated['contact_phone'] ?? null,
             'whatsapp_number' => $validated['whatsapp_number'] ?? null,
             'contact_email' => $validated['contact_email'] ?? null,

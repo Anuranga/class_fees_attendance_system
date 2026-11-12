@@ -25,10 +25,10 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/about-us', [HomeController::class, 'about'])->name('public.about');
 
 // Pre-School Online Admission Application (WhatsApp Shareable Form)
-Route::get('/apply', [ApplicationController::class, 'create'])->name('public.apply');
-Route::post('/apply', [ApplicationController::class, 'store'])->name('public.apply.store');
-Route::get('/apply/success/{application_number}', [ApplicationController::class, 'success'])->name('public.apply.success');
 Route::get('/apply/status', [ApplicationController::class, 'status'])->name('public.apply.status');
+Route::get('/apply/success/{application_number}', [ApplicationController::class, 'success'])->name('public.apply.success');
+Route::get('/apply/{token?}', [ApplicationController::class, 'create'])->name('public.apply');
+Route::post('/apply/{token?}', [ApplicationController::class, 'store'])->name('public.apply.store');
 
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');

@@ -91,27 +91,44 @@
                 </div>
             </div>
 
-            @if($application->status === 'enrolled' && $application->student)
+            @if($application->status === 'enrolled' || $application->status === 'approved')
                 @php
-                    $firstEnrollment = $application->student->enrollments->first();
+                    $firstEnrollment = $application->student?->enrollments?->first();
+                    $itemsToBring = $application->school?->items_to_bring_sinhala ?: \App\Models\SchoolSetting::defaultSinhalaItems();
                 @endphp
                 <div class="p-4 rounded-2xl bg-emerald-950/40 border border-emerald-500/30 space-y-3">
                     <div class="flex items-center gap-2 text-emerald-300 font-bold text-xs">
                         <i class="fa-solid fa-circle-check text-sm"></i>
-                        <span>Congratulations! Your child has been officially enrolled.</span>
+                        <span>සුභ පැතුම්! ඔබගේ දරුවා පෙරපාසලට සාර්ථකව තෝරාගෙන ඇත.</span>
                     </div>
-                    <div class="text-xs text-slate-300">
-                        Admission Number: <strong class="text-white font-mono">{{ $application->student->admission_number }}</strong>
-                        @if($application->assignedClass)
-                            &bull; Class Group: <strong class="text-cyan-300">{{ $application->assignedClass->name }}</strong>
-                        @endif
-                    </div>
+
+                    @if($application->student)
+                        <div class="text-xs text-slate-300">
+                            ඇතුළත් වීමේ අංකය: <strong class="text-white font-mono">{{ $application->student->admission_number }}</strong>
+                            @if($application->assignedClass)
+                                &bull; පන්තිය / කාණ්ඩය: <strong class="text-cyan-300">{{ $application->assignedClass->name }}</strong>
+                            @endif
+                        </div>
+                    @endif
+
+                    @if($itemsToBring)
+                        <div class="pt-2 border-t border-emerald-500/20 text-xs">
+                            <span class="font-bold text-emerald-300 block mb-1.5 flex items-center gap-1.5">
+                                <i class="fa-solid fa-list-check"></i>
+                                <span>පළමු දිනයේ රැගෙන ආ යුතු අත්‍යවශ්‍ය ද්‍රව්‍ය ලේඛනය:</span>
+                            </span>
+                            <pre class="font-sans text-[11px] text-slate-300 bg-slate-900/60 p-3 rounded-xl border border-emerald-500/20 whitespace-pre-line leading-relaxed">{{ $itemsToBring }}</pre>
+                        </div>
+                    @endif
+
                     @if($firstEnrollment)
-                        <a href="{{ route('public.pass', $firstEnrollment->qr_token) }}" target="_blank"
-                           class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition-all">
-                            <i class="fa-solid fa-id-card"></i>
-                            <span>View & Print Child's QR ID Card</span>
-                        </a>
+                        <div class="pt-1">
+                            <a href="{{ route('public.pass', $firstEnrollment->qr_token) }}" target="_blank"
+                               class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition-all">
+                                <i class="fa-solid fa-id-card"></i>
+                                <span>දරුවාගේ 3.7" &times; 2.6" QR හැඳුනුම්පත් පාස්පත බලන්න (View QR ID Pass)</span>
+                            </a>
+                        </div>
                     @endif
                 </div>
             @endif
