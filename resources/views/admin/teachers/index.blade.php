@@ -10,14 +10,20 @@
     <!-- Top Action Bar -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-            <h2 class="text-base font-bold text-slate-900">Faculty Management ({{ $teachers->count() }})</h2>
-            <p class="text-xs text-slate-500">Each instructor manages their own isolated classes, teaching assistants, and cash flows</p>
+            <div class="flex items-center gap-2">
+                <span class="px-2.5 py-0.5 rounded-lg text-xs font-black uppercase tracking-wider bg-indigo-50 text-indigo-700 border border-indigo-200">
+                    <i class="fa-solid fa-school text-indigo-500 mr-1"></i> {{ $school->name ?? 'Pre-School' }}
+                </span>
+                <span class="text-xs text-slate-400 font-semibold">&bull; Campus Faculty</span>
+            </div>
+            <h2 class="text-base font-bold text-slate-900 mt-1">Faculty & Teachers Management ({{ $teachers->count() }})</h2>
+            <p class="text-xs text-slate-500">Only the Principal can add teachers and configure operational permissions (fees, uniforms) for this school.</p>
         </div>
 
         <button @click="createTeacherModal = true"
-                class="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-md shadow-indigo-600/30 flex items-center justify-center gap-2 transition-all">
+                class="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-md shadow-indigo-600/30 flex items-center justify-center gap-2 transition-all cursor-pointer">
             <i class="fa-solid fa-user-plus"></i>
-            <span>Add Instructor Manually</span>
+            <span>Add Teacher to {{ Str::limit($school->name ?? 'School', 20) }}</span>
         </button>
     </div>
 
@@ -147,6 +153,54 @@
                             </div>
                         </div>
                     @endif
+
+                    <!-- Pre-School Campus Badge -->
+                    <div class="mb-3 flex items-center justify-between text-[11px] text-slate-500 bg-slate-50 px-2.5 py-1.5 rounded-lg border border-slate-100">
+                        <span class="flex items-center gap-1.5 font-bold text-slate-700">
+                            <i class="fa-solid fa-school text-indigo-500 text-xs"></i>
+                            <span>{{ $t->school?->name ?: ($school->name ?? 'Pre-School Campus') }}</span>
+                        </span>
+                        <span class="text-slate-400 font-mono text-[10px]">Staff #{{ $t->id }}</span>
+                    </div>
+
+                    <!-- Operational Permissions Control (Principal Only) -->
+                    <div class="mb-3 p-3 rounded-xl bg-slate-50 border border-slate-200/70 space-y-2">
+                        <div class="flex items-center justify-between border-b border-slate-200/50 pb-1.5">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1">
+                                <i class="fa-solid fa-shield-keyhole text-indigo-500"></i> Principal Permissions
+                            </span>
+                            <span class="text-[10px] text-slate-400 font-medium">Auto-saved</span>
+                        </div>
+                        
+                        <form action="{{ route('admin.teachers.permissions', $t) }}" method="POST" class="space-y-1.5 pt-1">
+                            @csrf
+                            <div class="flex items-center justify-between gap-2">
+                                <label class="flex items-center gap-1.5 text-xs text-slate-700 cursor-pointer">
+                                    <input type="checkbox" name="can_collect_fees" value="1" {{ $t->can_collect_fees ? 'checked' : '' }}
+                                           onchange="this.form.submit()" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                                    <span class="font-medium">Collect Fees & Receipts</span>
+                                </label>
+                                @if($t->can_collect_fees)
+                                    <span class="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-200">Allowed</span>
+                                @else
+                                    <span class="text-[9px] font-semibold uppercase px-1.5 py-0.5 rounded bg-slate-200 text-slate-600">Restricted</span>
+                                @endif
+                            </div>
+
+                            <div class="flex items-center justify-between gap-2">
+                                <label class="flex items-center gap-1.5 text-xs text-slate-700 cursor-pointer">
+                                    <input type="checkbox" name="can_manage_uniforms" value="1" {{ $t->can_manage_uniforms ? 'checked' : '' }}
+                                           onchange="this.form.submit()" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                                    <span class="font-medium">Manage Uniform Orders</span>
+                                </label>
+                                @if($t->can_manage_uniforms)
+                                    <span class="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-purple-100 text-purple-800 border border-purple-200">Allowed</span>
+                                @else
+                                    <span class="text-[9px] font-semibold uppercase px-1.5 py-0.5 rounded bg-slate-200 text-slate-600">Restricted</span>
+                                @endif
+                            </div>
+                        </form>
+                    </div>
 
                     <!-- Status Action Dropdown / Controls -->
                     <div class="my-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
@@ -306,8 +360,8 @@
             
             <div class="p-6 border-b border-slate-100 flex items-center justify-between">
                 <div>
-                    <h3 class="text-base font-bold text-slate-900">Add Instructor Account</h3>
-                    <p class="text-xs text-slate-500 mt-0.5">Create an active teacher user for isolated class management</p>
+                    <h3 class="text-base font-bold text-slate-900">Add Teacher for {{ $school->name ?? 'Pre-School' }}</h3>
+                    <p class="text-xs text-slate-500 mt-0.5">Assigned strictly to this pre-school campus with custom permissions</p>
                 </div>
                 <button @click="createTeacherModal = false" class="text-slate-400 hover:text-slate-600 p-1">
                     <i class="fa-solid fa-xmark text-lg"></i>

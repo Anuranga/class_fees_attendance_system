@@ -46,67 +46,46 @@ class AuthController extends Controller
     public function register(Request $request): RedirectResponse
     {
         $validated = $request->validate([
+            'preschool_name' => ['required', 'string', 'max:255'],
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:6', 'confirmed'],
-            'role' => ['nullable', 'string', 'in:teacher,principal'],
-            'preschool_name' => ['nullable', 'string', 'max:255'],
             'contact_phone' => ['nullable', 'string', 'max:40'],
         ]);
 
-        $role = $request->input('role', $request->input('account_type', 'principal'));
+        $schoolName = trim($validated['preschool_name']);
 
-        if ($role === 'principal') {
-            $schoolName = ! empty($validated['preschool_name']) ? trim($validated['preschool_name']) : ($validated['name']."'s Pre-School");
-
-            $user = User::create([
-                'name' => $validated['name'],
-                'email' => $validated['email'],
-                'password' => Hash::make($validated['password']),
-                'role' => 'admin',
-                'status' => 'pending', // Pending Super Admin verification!
-                'can_collect_fees' => true,
-                'can_manage_uniforms' => true,
-            ]);
-
-            $school = SchoolSetting::create([
-                'user_id' => $user->id,
-                'name' => $schoolName,
-                'motto' => 'Nurturing Little Minds for a Brighter Tomorrow',
-                'slug' => Str::slug($schoolName).'-'.Str::random(4),
-                'registration_token' => Str::random(24),
-                'contact_email' => $user->email,
-                'contact_phone' => $validated['contact_phone'] ?? null,
-                'whatsapp_number' => $validated['contact_phone'] ?? null,
-                'academic_year' => date('Y').'/'.(date('Y') + 1),
-                'is_admission_open' => true,
-                'items_to_bring_sinhala' => SchoolSetting::defaultSinhalaItems(),
-                'vision' => 'To be a center of early childhood educational excellence where every child discovers joy in learning, creativity, and self-confidence.',
-                'mission' => 'We provide a loving, safe, and stimulating environment guided by holistic early learning methodologies.',
-                'about_us' => "Welcome to {$schoolName}. We offer quality pre-school education and child care.",
-                'principal_message' => "Welcome to {$schoolName}! Every child is unique and full of potential.",
-            ]);
-
-            $user->update(['school_setting_id' => $school->id]);
-
-            return redirect()->route('login')->with('success', "Pre-School '{$schoolName}' and Principal account registered successfully! Your account is pending Super Admin approval before you can sign in.");
-        }
-
-        // Fallback for direct teacher registration (requires approval by Principal)
-        $firstSchool = SchoolSetting::first();
-
-        User::create([
-            'school_setting_id' => $firstSchool?->id,
+        $user = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
-            'role' => 'teacher',
-            'status' => 'pending',
-            'can_collect_fees' => false,
-            'can_manage_uniforms' => false,
+            'role' => 'admin',
+            'status' => 'pending', // Pending Super Admin verification!
+            'can_collect_fees' => true,
+            'can_manage_uniforms' => true,
         ]);
 
-        return redirect()->route('login')->with('success', 'Teacher registration received! Your account is pending approval by your school Principal before you can sign in.');
+        $school = SchoolSetting::create([
+            'user_id' => $user->id,
+            'name' => $schoolName,
+            'motto' => 'Nurturing Little Minds for a Brighter Tomorrow',
+            'slug' => Str::slug($schoolName).'-'.Str::random(4),
+            'registration_token' => Str::random(24),
+            'contact_email' => $user->email,
+            'contact_phone' => $validated['contact_phone'] ?? null,
+            'whatsapp_number' => $validated['contact_phone'] ?? null,
+            'academic_year' => date('Y').'/'.(date('Y') + 1),
+            'is_admission_open' => true,
+            'items_to_bring_sinhala' => SchoolSetting::defaultSinhalaItems(),
+            'vision' => 'To be a center of early childhood educational excellence where every child discovers joy in learning, creativity, and self-confidence.',
+            'mission' => 'We provide a loving, safe, and stimulating environment guided by holistic early learning methodologies.',
+            'about_us' => "Welcome to {$schoolName}. We offer quality pre-school education and child care.",
+            'principal_message' => "Welcome to {$schoolName}! Every child is unique and full of potential.",
+        ]);
+
+        $user->update(['school_setting_id' => $school->id]);
+
+        return redirect()->route('login')->with('success', "Pre-School '{$schoolName}' and Principal account registered successfully! Your account is pending Super Admin review and approval before you can sign in.");
     }
 
     public function login(Request $request): RedirectResponse

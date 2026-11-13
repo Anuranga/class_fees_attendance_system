@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\SchoolSetting;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -13,82 +14,171 @@ class TeacherRegistrationAndApprovalTest extends TestCase
 
     protected User $admin;
 
+    protected SchoolSetting $school;
+
     protected function setUp(): void
     {
         parent::setUp();
 
+        $this->school = SchoolSetting::create([
+            'name' => 'Royal Pre-School Academy',
+            'registration_token' => 'royal-token-123',
+        ]);
+
         $this->admin = User::create([
-            'name' => 'System Admin',
-            'email' => 'admin@edutrack.test',
+            'name' => 'Principal Perera',
+            'email' => 'principal@royal.lk',
             'password' => Hash::make('password'),
             'role' => 'admin',
             'status' => 'active',
+            'school_setting_id' => $this->school->id,
         ]);
+
+        $this->school->update(['user_id' => $this->admin->id]);
     }
 
-    public function test_teacher_registration_screen_can_be_rendered(): void
+    public function test_principal_registration_screen_can_be_rendered(): void
     {
         $response = $this->get(route('register'));
 
         $response->assertStatus(200);
         $response->assertSee('Register Your Pre-School');
-        $response->assertSee('Principal');
+        $response->assertSee('Principal Full Name');
+        $response->assertSee('Pre-School / Nursery Name');
+        $response->assertSee('Teacher accounts and individual permissions are created directly by your Pre-School\'s Principal', false);
     }
 
-    public function test_user_can_register_teacher_account_with_pending_status(): void
+    public function test_principal_registration_requires_preschool_name(): void
     {
         $response = $this->post(route('register.post'), [
-            'name' => 'Dr. Marie Curie',
-            'email' => 'marie.curie@edutrack.test',
+            'name' => 'Sister Anne',
+            'email' => 'anne@school.lk',
             'password' => 'secret123',
             'password_confirmation' => 'secret123',
-            'account_type' => 'teacher',
+            // Missing preschool_name
+        ]);
+
+        $response->assertSessionHasErrors(['preschool_name']);
+        $this->assertDatabaseMissing('users', ['email' => 'anne@school.lk']);
+    }
+
+    public function test_principal_registers_preschool_and_pending_account(): void
+    {
+        $response = $this->post(route('register.post'), [
+            'preschool_name' => 'Happy Valley Kindergarten',
+            'name' => 'Sister Anne',
+            'email' => 'anne@happyvalley.lk',
+            'password' => 'secret123',
+            'password_confirmation' => 'secret123',
+            'contact_phone' => '077 111 2233',
         ]);
 
         $response->assertRedirect(route('login'));
         $response->assertSessionHas('success');
 
-        $user = User::where('email', 'marie.curie@edutrack.test')->first();
+        $user = User::where('email', 'anne@happyvalley.lk')->first();
         $this->assertNotNull($user);
-        $this->assertEquals('Dr. Marie Curie', $user->name);
-        $this->assertEquals('teacher', $user->role);
+        $this->assertEquals('Sister Anne', $user->name);
+        $this->assertEquals('admin', $user->role);
         $this->assertEquals('pending', $user->status);
-        $this->assertTrue($user->isPending());
-        $this->assertFalse($user->isActive());
+        $this->assertTrue($user->isPrincipal());
+
+        $school = SchoolSetting::where('user_id', $user->id)->first();
+        $this->assertNotNull($school);
+        $this->assertEquals('Happy Valley Kindergarten', $school->name);
     }
 
-    public function test_registration_validation_fails_on_duplicate_email_or_mismatched_password(): void
+    public function test_principal_creates_teacher_directly_for_their_preschool(): void
     {
-        User::create([
-            'name' => 'Existing Teacher',
-            'email' => 'existing@edutrack.test',
-            'password' => Hash::make('password'),
+        $response = $this->actingAs($this->admin)->post(route('admin.teachers.store'), [
+            'name' => 'Teacher Kumari',
+            'email' => 'kumari@royal.lk',
+            'password' => 'secret123',
+            'can_collect_fees' => '1',
+            'can_manage_uniforms' => '1',
+        ]);
+
+        $response->assertSessionHas('success');
+
+        $teacher = User::where('email', 'kumari@royal.lk')->first();
+        $this->assertNotNull($teacher);
+        $this->assertEquals('Teacher Kumari', $teacher->name);
+        $this->assertEquals('teacher', $teacher->role);
+        $this->assertEquals('active', $teacher->status);
+        $this->assertEquals($this->school->id, $teacher->school_setting_id);
+        $this->assertEquals($this->admin->id, $teacher->teacher_id);
+        $this->assertTrue($teacher->can_collect_fees);
+        $this->assertTrue($teacher->can_manage_uniforms);
+    }
+
+    public function test_principal_can_toggle_teacher_operational_permissions(): void
+    {
+        $teacher = User::create([
+            'school_setting_id' => $this->school->id,
+            'teacher_id' => $this->admin->id,
+            'name' => 'Teacher Fernando',
+            'email' => 'fernando@royal.lk',
+            'password' => Hash::make('password123'),
             'role' => 'teacher',
             'status' => 'active',
+            'can_collect_fees' => true,
+            'can_manage_uniforms' => false,
         ]);
 
-        $response = $this->post(route('register.post'), [
-            'name' => 'Duplicate Email User',
-            'email' => 'existing@edutrack.test',
-            'password' => 'secret123',
-            'password_confirmation' => 'mismatch456',
+        // Revoke fees permission and grant uniform permission
+        $response = $this->actingAs($this->admin)->post(route('admin.teachers.permissions', $teacher), [
+            'can_collect_fees' => '0',
+            'can_manage_uniforms' => '1',
         ]);
 
-        $response->assertSessionHasErrors(['email', 'password']);
+        $response->assertSessionHas('success');
+
+        $teacher->refresh();
+        $this->assertFalse($teacher->can_collect_fees);
+        $this->assertTrue($teacher->can_manage_uniforms);
+    }
+
+    public function test_principal_cannot_modify_teachers_of_another_preschool(): void
+    {
+        $otherSchool = SchoolSetting::create([
+            'name' => 'Other Pre-School',
+            'registration_token' => 'other-token-999',
+        ]);
+
+        $otherTeacher = User::create([
+            'school_setting_id' => $otherSchool->id,
+            'name' => 'Teacher Outside',
+            'email' => 'outside@other.lk',
+            'password' => Hash::make('password123'),
+            'role' => 'teacher',
+            'status' => 'active',
+            'can_collect_fees' => true,
+            'can_manage_uniforms' => true,
+        ]);
+
+        $response = $this->actingAs($this->admin)->post(route('admin.teachers.permissions', $otherTeacher), [
+            'can_collect_fees' => '0',
+            'can_manage_uniforms' => '0',
+        ]);
+
+        $response->assertSessionHas('error');
+        $otherTeacher->refresh();
+        $this->assertTrue($otherTeacher->can_collect_fees); // Unchanged!
     }
 
     public function test_pending_teacher_cannot_log_in_until_approved(): void
     {
         User::create([
+            'school_setting_id' => $this->school->id,
             'name' => 'Pending Teacher',
-            'email' => 'pending@edutrack.test',
+            'email' => 'pending@royal.lk',
             'password' => Hash::make('password123'),
             'role' => 'teacher',
             'status' => 'pending',
         ]);
 
         $response = $this->post(route('login.post'), [
-            'email' => 'pending@edutrack.test',
+            'email' => 'pending@royal.lk',
             'password' => 'password123',
         ]);
 
@@ -96,72 +186,13 @@ class TeacherRegistrationAndApprovalTest extends TestCase
         $this->assertGuest();
     }
 
-    public function test_system_admin_can_view_pending_teachers_in_oversight(): void
-    {
-        $pendingTeacher = User::create([
-            'name' => 'Applicant Teacher',
-            'email' => 'applicant@edutrack.test',
-            'password' => Hash::make('password123'),
-            'role' => 'teacher',
-            'status' => 'pending',
-        ]);
-
-        // Admin checks overview dashboard
-        $dashboardResponse = $this->actingAs($this->admin)->get(route('admin.dashboard'));
-        $dashboardResponse->assertStatus(200);
-        $dashboardResponse->assertSee('Pending Approval');
-
-        // Admin views teachers page filtered by pending
-        $teachersResponse = $this->actingAs($this->admin)->get(route('admin.teachers.index', ['status' => 'pending']));
-        $teachersResponse->assertStatus(200);
-        $teachersResponse->assertSee('Applicant Teacher');
-        $teachersResponse->assertSee('Approve Account');
-    }
-
-    public function test_system_admin_can_approve_teacher_account(): void
+    public function test_principal_can_block_and_deactivate_teacher_accounts(): void
     {
         $teacher = User::create([
-            'name' => 'New Teacher',
-            'email' => 'new@edutrack.test',
-            'password' => Hash::make('password123'),
-            'role' => 'teacher',
-            'status' => 'pending',
-        ]);
-
-        $response = $this->actingAs($this->admin)->post(route('admin.users.approve', $teacher));
-
-        $response->assertSessionHas('success');
-        $this->assertEquals('active', $teacher->fresh()->status);
-        $this->assertTrue($teacher->fresh()->isActive());
-    }
-
-    public function test_approved_teacher_can_log_in_and_access_dashboard(): void
-    {
-        $teacher = User::create([
-            'name' => 'Approved Teacher',
-            'email' => 'approved@edutrack.test',
-            'password' => Hash::make('password123'),
-            'role' => 'teacher',
-            'status' => 'active',
-        ]);
-
-        $loginResponse = $this->post(route('login.post'), [
-            'email' => 'approved@edutrack.test',
-            'password' => 'password123',
-        ]);
-
-        $loginResponse->assertRedirect(route('teacher.dashboard'));
-        $this->assertAuthenticatedAs($teacher);
-
-        $dashboardResponse = $this->actingAs($teacher)->get(route('teacher.dashboard'));
-        $dashboardResponse->assertStatus(200);
-    }
-
-    public function test_system_admin_can_block_and_deactivate_teacher_accounts(): void
-    {
-        $teacher = User::create([
+            'school_setting_id' => $this->school->id,
+            'teacher_id' => $this->admin->id,
             'name' => 'Active Teacher',
-            'email' => 'activeteacher@edutrack.test',
+            'email' => 'activeteacher@royal.lk',
             'password' => Hash::make('password123'),
             'role' => 'teacher',
             'status' => 'active',

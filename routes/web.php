@@ -133,6 +133,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 
     Route::get('/teachers', [AdminDashboardController::class, 'teachers'])->name('teachers.index');
     Route::post('/teachers', [AdminDashboardController::class, 'storeTeacher'])->name('teachers.store');
+    Route::post('/teachers/{user}/permissions', [AdminDashboardController::class, 'updatePermissions'])->name('teachers.permissions');
     Route::post('/users/{user}/status', [AdminDashboardController::class, 'updateUserStatus'])->name('users.status');
     Route::post('/users/{user}/approve', [AdminDashboardController::class, 'approveUser'])->name('users.approve');
     Route::delete('/users/{user}', [AdminDashboardController::class, 'destroyUser'])->name('users.destroy');

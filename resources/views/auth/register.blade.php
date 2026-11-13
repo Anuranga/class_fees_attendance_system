@@ -10,17 +10,19 @@
             <i class="fa-solid fa-school-flag"></i>
         </div>
         <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Register Your Pre-School</h1>
-        <p class="text-sm text-slate-400 mt-1">Principal account creation & campus enrollment</p>
+        <p class="text-sm text-slate-400 mt-1">Principal account registration & campus onboarding</p>
     </div>
 
     <!-- Registration Card -->
     <div class="rounded-2xl bg-slate-800/80 border border-slate-700/80 p-8 shadow-2xl backdrop-blur-sm">
         
-        <div class="mb-6 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs flex items-start gap-2.5">
-            <i class="fa-solid fa-shield-halved text-sm shrink-0 mt-0.5 text-amber-400"></i>
-            <span class="leading-relaxed">
-                <strong>Super Admin Verification:</strong> Pre-School Principal accounts are reviewed and activated by the Super Administrator. Once approved, the Principal can add teachers, create classes (LKG, UKG), and open admissions.
-            </span>
+        <!-- Super Admin Approval Process Notice -->
+        <div class="mb-6 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs flex items-start gap-3">
+            <i class="fa-solid fa-shield-halved text-base shrink-0 mt-0.5 text-amber-400"></i>
+            <div class="leading-relaxed">
+                <strong class="block text-amber-200 font-bold mb-0.5">Pre-School Principal Account Process:</strong>
+                Each new Pre-School and Principal account is reviewed and activated by the Super Administrator. Once verified, the Principal has full authority to onboard their teachers, assign permissions, create classes (LKG, UKG), and issue admission links.
+            </div>
         </div>
 
         @if(session('error'))
@@ -30,75 +32,32 @@
             </div>
         @endif
 
-        <form action="{{ route('register.post') }}" method="POST" class="space-y-4" x-data="{ selectedRole: 'principal' }">
+        <form action="{{ route('register.post') }}" method="POST" class="space-y-4">
             @csrf
 
-            <!-- Role Selector: Principal vs Teacher -->
+            <!-- Pre-School / Nursery Campus Name -->
             <div>
-                <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Account Role *</label>
-                <div class="grid grid-cols-2 gap-3">
-                    <label class="cursor-pointer border-2 rounded-xl p-3 flex items-center gap-2.5 transition-all"
-                           :class="selectedRole === 'principal' ? 'border-amber-400 bg-amber-950/40 text-amber-200' : 'border-slate-700 bg-slate-900 text-slate-400'">
-                        <input type="radio" name="role" value="principal" x-model="selectedRole" class="sr-only">
-                        <i class="fa-solid fa-crown text-amber-400"></i>
-                        <span class="text-xs font-bold">Principal / School</span>
-                    </label>
-
-                    <label class="cursor-pointer border-2 rounded-xl p-3 flex items-center gap-2.5 transition-all"
-                           :class="selectedRole === 'teacher' ? 'border-indigo-400 bg-indigo-950/40 text-indigo-200' : 'border-slate-700 bg-slate-900 text-slate-400'">
-                        <input type="radio" name="role" value="teacher" x-model="selectedRole" class="sr-only">
-                        <i class="fa-solid fa-chalkboard-user text-indigo-400"></i>
-                        <span class="text-xs font-bold">Teacher</span>
-                    </label>
-                </div>
-            </div>
-
-            <!-- Informative Notice for Teachers -->
-            <div x-show="selectedRole === 'teacher'" x-cloak class="p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs">
-                <p class="font-semibold"><i class="fa-solid fa-circle-info mr-1"></i> Tip for Teachers:</p>
-                <p class="text-[11px] text-slate-300 mt-1">Your Principal can add you directly to your school's faculty portal. If registering manually, your account will be reviewed by your Principal before activation.</p>
-            </div>
-
-            <!-- Pre-School Name (for Principal registration) -->
-            <div x-show="selectedRole === 'principal'" class="space-y-4">
-                <div>
-                    <label for="preschool_name" class="block text-xs font-semibold text-amber-300 uppercase tracking-wider mb-2">
-                        <i class="fa-solid fa-school text-amber-400 mr-1"></i> Pre-School / Nursery Name *
-                    </label>
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                            <i class="fa-solid fa-shapes text-sm"></i>
-                        </div>
-                        <input type="text" id="preschool_name" name="preschool_name" value="{{ old('preschool_name') }}"
-                               :required="selectedRole === 'principal'"
-                               class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-900/80 border border-amber-500/50 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/30 text-white placeholder-slate-500 text-sm transition-all"
-                               placeholder="e.g. Global International Pre-School, Seven Bees, Miracle Nursery">
+                <label for="preschool_name" class="block text-xs font-bold text-amber-300 uppercase tracking-wider mb-2">
+                    <i class="fa-solid fa-school text-amber-400 mr-1"></i> Pre-School / Nursery Name *
+                </label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                        <i class="fa-solid fa-shapes text-sm"></i>
                     </div>
-                    <p class="text-[11px] text-slate-400 mt-1">This will register your school in the SaaS network and generate your unique admission link.</p>
-                    @error('preschool_name')
-                        <p class="mt-1.5 text-xs text-rose-400">{{ $message }}</p>
-                    @enderror
+                    <input type="text" id="preschool_name" name="preschool_name" value="{{ old('preschool_name') }}" required
+                           class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-900/80 border border-amber-500/50 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/30 text-white placeholder-slate-500 text-sm transition-all"
+                           placeholder="e.g. Global International Pre-School, Seven Bees">
                 </div>
-
-                <div>
-                    <label for="contact_phone" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
-                        <i class="fa-brands fa-whatsapp text-emerald-400 mr-1"></i> Official WhatsApp / Phone
-                    </label>
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                            <i class="fa-solid fa-phone text-sm"></i>
-                        </div>
-                        <input type="text" id="contact_phone" name="contact_phone" value="{{ old('contact_phone') }}"
-                               class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-900/80 border border-slate-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 text-white placeholder-slate-500 text-sm transition-all"
-                               placeholder="e.g. 077 123 4567">
-                    </div>
-                </div>
+                <p class="text-[11px] text-slate-400 mt-1">This will register your school in the SaaS network and isolate all student and staff data.</p>
+                @error('preschool_name')
+                    <p class="mt-1.5 text-xs text-rose-400">{{ $message }}</p>
+                @enderror
             </div>
 
-            <!-- Full Name -->
+            <!-- Principal Full Name -->
             <div>
                 <label for="name" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
-                    <span x-text="selectedRole === 'principal' ? 'Principal Full Name *' : 'Teacher Full Name *'"></span>
+                    <i class="fa-solid fa-user-tie text-indigo-400 mr-1"></i> Principal Full Name *
                 </label>
                 <div class="relative">
                     <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -113,9 +72,29 @@
                 @enderror
             </div>
 
-            <!-- Email -->
+            <!-- Official WhatsApp / Phone -->
             <div>
-                <label for="email" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Email Address (Login) *</label>
+                <label for="contact_phone" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+                    <i class="fa-brands fa-whatsapp text-emerald-400 mr-1"></i> Official WhatsApp / Contact Phone
+                </label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                        <i class="fa-solid fa-phone text-sm"></i>
+                    </div>
+                    <input type="text" id="contact_phone" name="contact_phone" value="{{ old('contact_phone') }}"
+                           class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-900/80 border border-slate-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 text-white placeholder-slate-500 text-sm transition-all"
+                           placeholder="e.g. 077 123 4567">
+                </div>
+                @error('contact_phone')
+                    <p class="mt-1.5 text-xs text-rose-400">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <!-- Email Address (Login) -->
+            <div>
+                <label for="email" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+                    <i class="fa-solid fa-envelope text-indigo-400 mr-1"></i> Principal Email Address (Login) *
+                </label>
                 <div class="relative">
                     <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                         <i class="fa-solid fa-envelope text-sm"></i>
@@ -131,7 +110,9 @@
 
             <!-- Password -->
             <div>
-                <label for="password" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Password *</label>
+                <label for="password" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+                    <i class="fa-solid fa-lock text-indigo-400 mr-1"></i> Password *
+                </label>
                 <div class="relative">
                     <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                         <i class="fa-solid fa-lock text-sm"></i>
@@ -147,7 +128,9 @@
 
             <!-- Password Confirmation -->
             <div>
-                <label for="password_confirmation" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Confirm Password *</label>
+                <label for="password_confirmation" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+                    <i class="fa-solid fa-lock-check text-indigo-400 mr-1"></i> Confirm Password *
+                </label>
                 <div class="relative">
                     <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                         <i class="fa-solid fa-lock-check text-sm"></i>
@@ -161,12 +144,23 @@
             <!-- Submit Button -->
             <div class="pt-2">
                 <button type="submit" 
-                        class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99] text-white font-bold text-sm shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer">
-                    <i class="fa-solid fa-school-flag text-xs"></i>
-                    <span x-text="selectedRole === 'principal' ? 'Register Pre-School Principal Account' : 'Submit Teacher Registration'"></span>
+                        class="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 active:scale-[0.99] text-slate-950 font-black text-sm shadow-lg shadow-amber-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer">
+                    <i class="fa-solid fa-school-flag text-base"></i>
+                    <span>Register Pre-School & Principal Account</span>
                 </button>
             </div>
         </form>
+
+        <!-- Teacher Information Callout -->
+        <div class="mt-6 p-4 rounded-xl bg-slate-900/70 border border-slate-700/60 text-xs text-slate-400 space-y-1">
+            <div class="flex items-center gap-2 font-bold text-slate-300">
+                <i class="fa-solid fa-chalkboard-user text-indigo-400"></i>
+                <span>Are you a Teacher or Staff Member?</span>
+            </div>
+            <p class="text-[11px] leading-relaxed text-slate-400">
+                Teachers do not register publicly. Teacher accounts and individual permissions are created directly by your Pre-School's Principal. Please contact your Principal to receive your login credentials.
+            </p>
+        </div>
 
         <!-- Back to Login -->
         <div class="mt-6 pt-5 border-t border-slate-700/60 text-center text-xs text-slate-400">

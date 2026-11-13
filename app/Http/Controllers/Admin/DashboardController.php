@@ -168,7 +168,7 @@ class DashboardController extends Controller
             'inactive' => User::where('role', 'teacher')->where('status', 'inactive')->where($scopedTeacherFilter)->count(),
         ];
 
-        return view('admin.teachers.index', compact('teachers', 'counts', 'statusFilter'));
+        return view('admin.teachers.index', compact('teachers', 'counts', 'statusFilter', 'school'));
     }
 
     /**
@@ -197,7 +197,27 @@ class DashboardController extends Controller
             'email_verified_at' => now(),
         ]);
 
-        return back()->with('success', "Teacher account for {$teacher->name} created successfully!");
+        return back()->with('success', "Teacher account for {$teacher->name} created and assigned to {$school->name} successfully!");
+    }
+
+    /**
+     * Update teacher operational permissions (fees, uniforms).
+     */
+    public function updatePermissions(Request $request, User $user): RedirectResponse
+    {
+        $principal = Auth::user();
+        if (! $principal->isSuperAdmin()) {
+            if ($user->school_setting_id !== $principal->school_setting_id && $user->teacher_id !== $principal->id) {
+                return back()->with('error', 'Unauthorized. You can only configure teachers belonging to your pre-school.');
+            }
+        }
+
+        $user->update([
+            'can_collect_fees' => $request->boolean('can_collect_fees'),
+            'can_manage_uniforms' => $request->boolean('can_manage_uniforms'),
+        ]);
+
+        return back()->with('success', "Operational permissions for {$user->name} have been updated successfully!");
     }
 
     /**

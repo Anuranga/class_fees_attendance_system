@@ -96,11 +96,11 @@ class PrincipalAndUniformWorkflowTest extends TestCase
     public function test_user_can_register_as_principal_or_teacher(): void
     {
         $response = $this->post(route('register.post'), [
+            'preschool_name' => 'St. Nicholas Pre-School',
             'name' => 'New Principal User',
             'email' => 'newprincipal@preschool.lk',
             'password' => 'secret123',
             'password_confirmation' => 'secret123',
-            'role' => 'principal',
         ]);
 
         $response->assertRedirect(route('login'));
