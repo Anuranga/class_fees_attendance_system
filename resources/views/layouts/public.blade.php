@@ -32,24 +32,39 @@
                 <div class="w-9 h-9 rounded-xl gradient-brand flex items-center justify-center text-white shadow-md shadow-indigo-500/20">
                     <i class="fa-solid fa-shapes"></i>
                 </div>
-                <span class="font-bold text-lg text-white tracking-tight">{{ $school->name ?? 'Pre-School Portal' }}</span>
+                <div>
+                    @if(isset($school) && request()->routeIs('public.apply*') && !empty($school->name))
+                        <span class="font-bold text-base sm:text-lg text-white tracking-tight">{{ $school->name }}</span>
+                    @else
+                        <span class="font-extrabold text-base sm:text-lg text-white tracking-tight">SmartPreSchool <span class="text-indigo-400 font-semibold text-xs sm:text-sm">Hub</span></span>
+                    @endif
+                </div>
             </a>
 
-            <div class="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm font-medium">
-                <a href="{{ route('public.about') }}" class="text-slate-300 hover:text-white transition-colors flex items-center gap-1.5">
-                    <i class="fa-solid fa-school text-xs text-amber-400"></i>
-                    <span>Vision & Mission</span>
+            <div class="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm font-medium">
+                <a href="{{ route('home') }}#development" class="text-slate-300 hover:text-white transition-colors hidden md:flex items-center gap-1.5">
+                    <i class="fa-solid fa-child-reaching text-xs text-pink-400"></i>
+                    <span>Child Development</span>
+                </a>
+                <a href="{{ route('home') }}#programs" class="text-slate-300 hover:text-white transition-colors hidden sm:flex items-center gap-1.5">
+                    <i class="fa-solid fa-shapes text-xs text-amber-400"></i>
+                    <span>Programs</span>
+                </a>
+                <a href="{{ route('home') }}#preschools" class="text-slate-300 hover:text-white transition-colors hidden sm:flex items-center gap-1.5">
+                    <i class="fa-solid fa-school text-xs text-cyan-400"></i>
+                    <span>Pre-Schools</span>
                 </a>
                 <a href="{{ route('public.apply.status') }}" class="text-slate-300 hover:text-white transition-colors flex items-center gap-1.5">
-                    <i class="fa-solid fa-magnifying-glass text-xs text-cyan-400"></i>
+                    <i class="fa-solid fa-magnifying-glass text-xs text-emerald-400"></i>
                     <span>App Status</span>
                 </a>
                 <a href="{{ route('public.lookup') }}" class="text-slate-300 hover:text-white transition-colors flex items-center gap-1.5">
                     <i class="fa-solid fa-id-card text-xs text-indigo-400"></i>
                     <span>QR Pass</span>
                 </a>
-                <a href="{{ route('login') }}" class="px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow transition-all">
-                    Staff Portal
+                <a href="{{ route('login') }}" class="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-bold shadow-md shadow-indigo-600/30 flex items-center gap-1.5 transition-all">
+                    <i class="fa-solid fa-chalkboard-user text-xs"></i>
+                    <span>Staff Portal</span>
                 </a>
             </div>
         </div>
@@ -63,12 +78,13 @@
     <!-- Public Footer -->
     <footer class="no-print py-6 text-center text-xs text-slate-500 border-t border-slate-800/60">
         <div class="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-            <span>&copy; {{ date('Y') }} {{ $school->name ?? 'EduTrack Systems' }}. All rights reserved.</span>
+            <span>&copy; {{ date('Y') }} SmartPreSchool Early Childhood Development Hub. All rights reserved.</span>
             <div class="flex items-center gap-4">
                 <a href="{{ route('home') }}" class="hover:text-slate-400 transition-colors">Portal Home</a>
-                <a href="{{ route('register') }}" class="hover:text-slate-400 transition-colors">Principal & Staff Register</a>
+                <a href="{{ route('public.apply') }}" class="hover:text-slate-400 transition-colors">Select Pre-School</a>
                 <a href="{{ route('public.lookup') }}" class="hover:text-slate-400 transition-colors">Student Lookup</a>
-                <a href="{{ route('login') }}" class="hover:text-slate-400 transition-colors">Teacher & Admin Sign In</a>
+                <a href="{{ route('login') }}" class="hover:text-slate-400 transition-colors font-semibold text-indigo-400">Staff Portal (Login)</a>
+                <a href="{{ route('register') }}" class="hover:text-slate-400 transition-colors">Principal Register</a>
             </div>
         </div>
     </footer>

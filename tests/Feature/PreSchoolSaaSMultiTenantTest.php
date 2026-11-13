@@ -257,4 +257,37 @@ class PreSchoolSaaSMultiTenantTest extends TestCase
         $sevenDashboard->assertStatus(200);
         $this->assertEquals(1, $sevenDashboard->viewData('totalClasses'));
     }
+
+    public function test_homepage_renders_common_early_childhood_content_and_member_schools(): void
+    {
+        SchoolSetting::create([
+            'name' => 'Global International Pre-School',
+            'motto' => 'Nurturing Global Minds',
+            'is_admission_open' => true,
+        ]);
+
+        SchoolSetting::create([
+            'name' => 'Seven Bees Pre-School',
+            'motto' => 'Buzzing with Joyful Learning',
+            'is_admission_open' => true,
+        ]);
+
+        $response = $this->get(route('home'));
+        $response->assertStatus(200);
+
+        // Common Early Childhood Education Content & Milestones
+        $response->assertSee('Nurturing Little Minds');
+        $response->assertSee('How Young Children Learn');
+        $response->assertSee('Playgroup');
+        $response->assertSee('Lower Kindergarten (LKG)');
+        $response->assertSee('Upper Kindergarten (UKG)');
+
+        // Member schools showcase
+        $response->assertSee('Global International Pre-School');
+        $response->assertSee('Seven Bees Pre-School');
+
+        // Staff portal access
+        $response->assertSee('Staff Portal');
+        $response->assertSee(route('login'));
+    }
 }

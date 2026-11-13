@@ -393,3 +393,4 @@ function universalScanner() {
 }
 </script>
 @endsection
+

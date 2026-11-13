@@ -12,9 +12,10 @@ class HomeController extends Controller
      */
     public function index(): View
     {
-        $school = SchoolSetting::get();
+        $schools = SchoolSetting::all();
+        $featuredSchool = SchoolSetting::first();
 
-        return view('welcome', compact('school'));
+        return view('welcome', compact('schools', 'featuredSchool'));
     }
 
     /**
