@@ -173,3 +173,4 @@ class PrincipalManagementController extends Controller
         return back()->with('info', "Principal '{$name}'".($schoolName ? " and Pre-School '{$schoolName}'" : '').' have been removed.');
     }
 }
+

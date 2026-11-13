@@ -227,3 +227,4 @@ class SuperAdminAndPrincipalApprovalTest extends TestCase
         $this->assertEquals('active', $principal->status);
     }
 }
+
