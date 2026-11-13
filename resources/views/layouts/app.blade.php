@@ -47,15 +47,17 @@
             
             <!-- Brand Header -->
             <div class="h-20 flex items-center justify-between px-6 border-b border-slate-800/80 bg-slate-950/40">
-                <a href="{{ Auth::user()->isAdmin() ? route('admin.dashboard') : route('teacher.dashboard') }}" class="flex items-center gap-3 group">
+                <a href="{{ Auth::user()->isSuperAdmin() ? route('super_admin.principals.index') : (Auth::user()->isAdmin() ? route('admin.dashboard') : route('teacher.dashboard')) }}" class="flex items-center gap-3 group">
                     <div class="w-10 h-10 rounded-xl gradient-brand flex items-center justify-center text-white shadow-lg shadow-indigo-500/30 group-hover:scale-105 transition-transform">
                         <i class="fa-solid fa-graduation-cap text-lg"></i>
                     </div>
                     <div>
                         <span class="font-extrabold text-lg text-white tracking-tight flex items-center gap-1.5">
                             EduTrack 
-                            @if(Auth::user()->isAdmin())
-                                <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">Admin</span>
+                            @if(Auth::user()->isSuperAdmin())
+                                <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30">Super Admin</span>
+                            @elseif(Auth::user()->isPrincipal())
+                                <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">Principal</span>
                             @elseif(Auth::user()->isAssistant())
                                 <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">Assistant</span>
                             @else
@@ -87,9 +89,20 @@
 
             <!-- Navigation Links -->
             <nav class="flex-1 px-4 space-y-1.5 overflow-y-auto">
+                @if(Auth::user()->isSuperAdmin())
+                    <!-- Super Admin Platform Oversight -->
+                    <div class="px-3 pt-2 pb-1 text-xs font-semibold uppercase tracking-wider text-rose-400">Platform Super Admin</div>
+                    
+                    <a href="{{ route('super_admin.principals.index') }}" 
+                       class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all {{ request()->routeIs('super_admin.principals.*') ? 'bg-rose-600 text-white shadow-lg shadow-rose-600/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                        <i class="fa-solid fa-school-flag w-5 text-center text-base text-rose-400"></i>
+                        <span>Pre-Schools & Principals</span>
+                    </a>
+                @endif
+
                 @if(Auth::user()->isAdmin())
-                    <!-- Admin Navigation -->
-                    <div class="px-3 pt-2 pb-1 text-xs font-semibold uppercase tracking-wider text-slate-400">Administration</div>
+                    <!-- Admin / Principal Navigation -->
+                    <div class="px-3 pt-2 pb-1 text-xs font-semibold uppercase tracking-wider text-slate-400">{{ Auth::user()->isSuperAdmin() ? 'Pre-School Operations' : 'Principal Administration' }}</div>
                     
                     <a href="{{ route('admin.dashboard') }}" 
                        class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all {{ request()->routeIs('admin.dashboard') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
@@ -320,7 +333,34 @@
             <!-- Mobile Bottom Navigation Bar (Phone Friendly) -->
             <nav class="lg:hidden fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-slate-200/90 z-30 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] pb-[env(safe-area-inset-bottom)]">
                 <div class="grid grid-cols-5 items-center h-16 px-1">
-                    @if(Auth::user()->isAdmin())
+                    @if(Auth::user()->isSuperAdmin())
+                        <!-- Super Admin Bottom Navigation -->
+                        <a href="{{ route('super_admin.principals.index') }}" 
+                           class="flex flex-col items-center justify-center py-1 {{ request()->routeIs('super_admin.principals.*') ? 'text-rose-600 font-bold' : 'text-slate-500 hover:text-slate-800' }}">
+                            <i class="fa-solid fa-school-flag text-lg"></i>
+                            <span class="text-[10px] mt-0.5 font-semibold">Schools</span>
+                        </a>
+                        <a href="{{ route('admin.dashboard') }}" 
+                           class="flex flex-col items-center justify-center py-1 {{ request()->routeIs('admin.dashboard') ? 'text-indigo-600 font-bold' : 'text-slate-500 hover:text-slate-800' }}">
+                            <i class="fa-solid fa-chart-pie text-lg"></i>
+                            <span class="text-[10px] mt-0.5 font-semibold">Overview</span>
+                        </a>
+                        <a href="{{ route('admin.teachers.index') }}" 
+                           class="flex flex-col items-center justify-center py-1 {{ request()->routeIs('admin.teachers.*') ? 'text-indigo-600 font-bold' : 'text-slate-500 hover:text-slate-800' }}">
+                            <i class="fa-solid fa-chalkboard-user text-lg"></i>
+                            <span class="text-[10px] mt-0.5 font-semibold">Teachers</span>
+                        </a>
+                        <a href="{{ route('universal.attendance.scan') }}" 
+                           class="flex flex-col items-center justify-center py-1 {{ request()->routeIs('universal.attendance.scan') ? 'text-emerald-600 font-bold' : 'text-slate-500 hover:text-slate-800' }}">
+                            <i class="fa-solid fa-qrcode text-lg"></i>
+                            <span class="text-[10px] mt-0.5 font-semibold">Scanner</span>
+                        </a>
+                        <button @click="sidebarOpen = true" 
+                                class="flex flex-col items-center justify-center py-1 text-slate-500 hover:text-slate-800">
+                            <i class="fa-solid fa-bars text-lg"></i>
+                            <span class="text-[10px] mt-0.5 font-semibold">Menu</span>
+                        </button>
+                    @elseif(Auth::user()->isAdmin())
                         <!-- Admin Bottom Navigation -->
                         <a href="{{ route('admin.dashboard') }}" 
                            class="flex flex-col items-center justify-center py-1 {{ request()->routeIs('admin.dashboard') ? 'text-indigo-600 font-bold' : 'text-slate-500 hover:text-slate-800' }}">

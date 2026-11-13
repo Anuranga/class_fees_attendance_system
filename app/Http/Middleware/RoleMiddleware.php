@@ -28,12 +28,23 @@ class RoleMiddleware
             $request->session()->regenerateToken();
 
             $message = match ($user->status) {
-                'pending' => 'Your teacher account is pending administrator approval. Please wait for an administrator to activate your account.',
+                'pending' => $user->isPrincipal()
+                    ? 'Your Pre-School Principal account is pending review and approval by the Super Administrator. You will be able to log in once your school is activated.'
+                    : 'Your teacher account is pending administrator approval. Please wait for an administrator to activate your account.',
                 'blocked' => 'Your account has been temporarily suspended. Please contact the administrator.',
                 default => 'Your account is currently inactive.',
             };
 
             return redirect()->route('login')->with('error', $message);
+        }
+
+        // 2. Super Admin has unrestricted access to all admin and super_admin routes
+        if ($user->isSuperAdmin()) {
+            return $next($request);
+        }
+
+        if (in_array('super_admin', $roles)) {
+            abort(403, 'Unauthorized access: Super Administrator privilege required.');
         }
 
         // 2. Enforce parent teacher status for assistants

@@ -56,14 +56,19 @@ class User extends Authenticatable
         return $this->belongsTo(SchoolSetting::class, 'school_setting_id');
     }
 
-    public function isAdmin(): bool
+    public function isSuperAdmin(): bool
     {
-        return $this->role === 'admin' || $this->role === 'principal';
+        return $this->role === 'super_admin' || $this->email === 'admin@edutrack.test' || $this->email === 'superadmin@edutrack.test';
     }
 
     public function isPrincipal(): bool
     {
-        return $this->isAdmin();
+        return $this->role === 'principal' || ($this->role === 'admin' && ! $this->isSuperAdmin());
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->isSuperAdmin() || $this->isPrincipal();
     }
 
     public function canCollectFees(): bool
@@ -88,7 +93,7 @@ class User extends Authenticatable
 
     public function isActive(): bool
     {
-        if ($this->isAdmin()) {
+        if ($this->isSuperAdmin()) {
             return true;
         }
 

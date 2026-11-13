@@ -236,12 +236,21 @@
                             <span>ID Badge</span>
                         </a>
 
-                        @if($t->status !== 'active')
+                        @if($t->status === 'pending')
                             <form action="{{ route('admin.users.approve', $t) }}" method="POST">
                                 @csrf
                                 <button type="submit" class="px-2.5 py-1 rounded-lg text-emerald-600 hover:bg-emerald-50 font-bold transition-colors flex items-center gap-1" title="Approve and activate account">
                                     <i class="fa-solid fa-check text-xs"></i>
                                     <span>Approve</span>
+                                </button>
+                            </form>
+                        @elseif($t->status !== 'active')
+                            <form action="{{ route('admin.users.status', $t) }}" method="POST">
+                                @csrf
+                                <input type="hidden" name="status" value="active">
+                                <button type="submit" class="px-2.5 py-1 rounded-lg text-emerald-600 hover:bg-emerald-50 font-bold transition-colors flex items-center gap-1" title="Activate and unblock account">
+                                    <i class="fa-solid fa-circle-check text-xs"></i>
+                                    <span>Activate</span>
                                 </button>
                             </form>
                         @endif
@@ -324,6 +333,18 @@
                     <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Password *</label>
                     <input type="password" name="password" required minlength="6" placeholder="At least 6 characters"
                            class="w-full px-4 py-2 rounded-xl border border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 text-slate-800 text-sm">
+                </div>
+
+                <div class="space-y-2 pt-2 border-t border-slate-100">
+                    <span class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Operational Permissions</span>
+                    <label class="flex items-center gap-2.5 text-xs text-slate-700 cursor-pointer">
+                        <input type="checkbox" name="can_collect_fees" value="1" checked class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                        <span>Can Collect & Issue Monthly School Fees</span>
+                    </label>
+                    <label class="flex items-center gap-2.5 text-xs text-slate-700 cursor-pointer">
+                        <input type="checkbox" name="can_manage_uniforms" value="1" checked class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                        <span>Can Manage Pre-School Uniform Orders & Deliveries</span>
+                    </label>
                 </div>
 
                 <div class="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">

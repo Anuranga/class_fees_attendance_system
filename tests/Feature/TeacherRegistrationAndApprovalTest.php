@@ -31,8 +31,8 @@ class TeacherRegistrationAndApprovalTest extends TestCase
         $response = $this->get(route('register'));
 
         $response->assertStatus(200);
-        $response->assertSee('Create Teacher Account');
-        $response->assertSee('Register Teacher Account');
+        $response->assertSee('Register Your Pre-School');
+        $response->assertSee('Principal');
     }
 
     public function test_user_can_register_teacher_account_with_pending_status(): void
@@ -42,6 +42,7 @@ class TeacherRegistrationAndApprovalTest extends TestCase
             'email' => 'marie.curie@edutrack.test',
             'password' => 'secret123',
             'password_confirmation' => 'secret123',
+            'account_type' => 'teacher',
         ]);
 
         $response->assertRedirect(route('login'));

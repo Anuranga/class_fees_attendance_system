@@ -16,6 +16,10 @@ class AuthController extends Controller
     public function showLogin(): View|RedirectResponse
     {
         if (Auth::check()) {
+            if (Auth::user()->isSuperAdmin()) {
+                return redirect()->route('super_admin.principals.index');
+            }
+
             return Auth::user()->isAdmin()
                 ? redirect()->route('admin.dashboard')
                 : redirect()->route('teacher.dashboard');
@@ -27,6 +31,10 @@ class AuthController extends Controller
     public function showRegister(): View|RedirectResponse
     {
         if (Auth::check()) {
+            if (Auth::user()->isSuperAdmin()) {
+                return redirect()->route('super_admin.principals.index');
+            }
+
             return Auth::user()->isAdmin()
                 ? redirect()->route('admin.dashboard')
                 : redirect()->route('teacher.dashboard');
@@ -46,7 +54,7 @@ class AuthController extends Controller
             'contact_phone' => ['nullable', 'string', 'max:40'],
         ]);
 
-        $role = $validated['role'] ?? 'teacher';
+        $role = $request->input('role', $request->input('account_type', 'principal'));
 
         if ($role === 'principal') {
             $schoolName = ! empty($validated['preschool_name']) ? trim($validated['preschool_name']) : ($validated['name']."'s Pre-School");
@@ -56,7 +64,7 @@ class AuthController extends Controller
                 'email' => $validated['email'],
                 'password' => Hash::make($validated['password']),
                 'role' => 'admin',
-                'status' => 'active',
+                'status' => 'pending', // Pending Super Admin verification!
                 'can_collect_fees' => true,
                 'can_manage_uniforms' => true,
             ]);
@@ -81,13 +89,10 @@ class AuthController extends Controller
 
             $user->update(['school_setting_id' => $school->id]);
 
-            return redirect()->route('login')->with('success', "Pre-School '{$schoolName}' registered successfully! You can now log in as Principal.");
+            return redirect()->route('login')->with('success', "Pre-School '{$schoolName}' and Principal account registered successfully! Your account is pending Super Admin approval before you can sign in.");
         }
 
-        // Registering as Teacher
-        $hasExistingPrincipal = User::whereIn('role', ['admin', 'principal'])->exists();
-        $status = ! $hasExistingPrincipal ? 'active' : 'pending';
-
+        // Fallback for direct teacher registration (requires approval by Principal)
         $firstSchool = SchoolSetting::first();
 
         User::create([
@@ -96,16 +101,12 @@ class AuthController extends Controller
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
             'role' => 'teacher',
-            'status' => $status,
+            'status' => 'pending',
             'can_collect_fees' => false,
             'can_manage_uniforms' => false,
         ]);
 
-        $successMsg = ($status === 'active')
-            ? 'Teacher account created and activated successfully! You can now log in.'
-            : 'Your account has been registered successfully! It is currently pending administrator verification before sign in.';
-
-        return redirect()->route('login')->with('success', $successMsg);
+        return redirect()->route('login')->with('success', 'Teacher registration received! Your account is pending approval by your school Principal before you can sign in.');
     }
 
     public function login(Request $request): RedirectResponse
@@ -126,9 +127,11 @@ class AuthController extends Controller
                 $request->session()->regenerateToken();
 
                 $message = match ($user->status) {
-                    'pending' => 'Your teacher account is pending administrator approval. Please wait for an administrator to approve and activate your account.',
+                    'pending' => $user->isPrincipal()
+                        ? 'Your Pre-School Principal account is pending review and approval by the Super Administrator. You will be able to log in once your school is activated.'
+                        : 'Your teacher account is pending administrator approval. Please wait for your school Principal to approve and activate your account.',
                     'blocked' => 'Your account has been temporarily suspended/blocked. Please contact the administrator.',
-                    default => 'Your account is currently inactive. Please contact the administrator or your instructor.',
+                    default => 'Your account is currently inactive. Please contact the administrator.',
                 };
 
                 return back()->withErrors(['email' => $message])->onlyInput('email');
@@ -146,9 +149,14 @@ class AuthController extends Controller
 
             $request->session()->regenerate();
 
+            if ($user->isSuperAdmin()) {
+                return redirect()->intended(route('super_admin.principals.index'))
+                    ->with('success', 'Welcome, Super Administrator!');
+            }
+
             if ($user->isAdmin()) {
                 return redirect()->intended(route('admin.dashboard'))
-                    ->with('success', 'Welcome back, Administrator '.$user->name.'!');
+                    ->with('success', 'Welcome back, Principal '.$user->name.'!');
             }
 
             return redirect()->intended(route('teacher.dashboard'))

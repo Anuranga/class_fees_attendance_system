@@ -9,6 +9,7 @@ use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PublicRegistrationController;
+use App\Http\Controllers\SuperAdmin\PrincipalManagementController;
 use App\Http\Controllers\Teacher\AssistantController as TeacherAssistantController;
 use App\Http\Controllers\Teacher\AttendanceController as TeacherAttendanceController;
 use App\Http\Controllers\Teacher\ClassController as TeacherClassController;
@@ -157,4 +158,18 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/applications/{application}', [AdminApplicationController::class, 'show'])->name('applications.show');
     Route::post('/applications/{application}/status', [AdminApplicationController::class, 'updateStatus'])->name('applications.status');
     Route::post('/applications/{application}/enroll', [AdminApplicationController::class, 'enroll'])->name('applications.enroll');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Super Admin Central Oversight Routes
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'role:super_admin'])->prefix('super-admin')->name('super_admin.')->group(function () {
+    Route::get('/principals', [PrincipalManagementController::class, 'index'])->name('principals.index');
+    Route::post('/principals', [PrincipalManagementController::class, 'store'])->name('principals.store');
+    Route::post('/principals/{user}/approve', [PrincipalManagementController::class, 'approve'])->name('principals.approve');
+    Route::post('/principals/{user}/block', [PrincipalManagementController::class, 'block'])->name('principals.block');
+    Route::post('/principals/{user}/activate', [PrincipalManagementController::class, 'activate'])->name('principals.activate');
+    Route::delete('/principals/{user}', [PrincipalManagementController::class, 'destroy'])->name('principals.destroy');
 });

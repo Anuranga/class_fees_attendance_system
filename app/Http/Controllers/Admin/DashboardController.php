@@ -192,6 +192,8 @@ class DashboardController extends Controller
             'password' => Hash::make($validated['password']),
             'role' => 'teacher',
             'status' => 'active',
+            'can_collect_fees' => $request->boolean('can_collect_fees', true),
+            'can_manage_uniforms' => $request->boolean('can_manage_uniforms', true),
             'email_verified_at' => now(),
         ]);
 
