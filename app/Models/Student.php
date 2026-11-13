@@ -91,13 +91,18 @@ class Student extends Model
     }
 
     /**
-     * Generate next sequential admission number if not provided
+     * Generate next sequential unique admission number if not provided.
      */
     public static function generateAdmissionNumber(): string
     {
         $last = static::orderBy('id', 'desc')->first();
         $nextId = $last ? ($last->id + 1) : 1;
 
-        return 'ADM-'.str_pad($nextId, 5, '0', STR_PAD_LEFT);
+        do {
+            $candidate = 'ADM-'.str_pad((string) $nextId, 5, '0', STR_PAD_LEFT);
+            $nextId++;
+        } while (static::where('admission_number', $candidate)->exists());
+
+        return $candidate;
     }
 }

@@ -8,6 +8,7 @@ use App\Models\ClassRoom;
 use App\Models\ClassStudent;
 use App\Models\SchoolSetting;
 use App\Models\Student;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -152,7 +153,9 @@ class ApplicationManagementController extends Controller
     {
         $validated = $request->validate([
             'class_id' => ['required', 'exists:classes,id'],
-            'admission_number' => ['nullable', 'string', 'max:50'],
+            'admission_number' => ['nullable', 'string', 'max:50', 'unique:students,admission_number'],
+        ], [
+            'admission_number.unique' => "Admission number ':input' is already assigned to another student. Please enter a unique admission number or leave it blank to auto-generate.",
         ]);
 
         $classRoom = ClassRoom::findOrFail($validated['class_id']);
@@ -167,22 +170,28 @@ class ApplicationManagementController extends Controller
             $guardianName = $application->father_name ?: ($application->mother_name ?: 'Parent');
             $guardianPhone = $application->whatsapp_number;
 
-            $student = Student::create([
-                'admission_number' => $admNumber,
-                'full_name' => $application->child_full_name,
-                'date_of_birth' => $application->date_of_birth,
-                'gender' => $application->gender,
-                'blood_group' => $application->blood_group,
-                'allergies_medical_notes' => $application->medical_notes,
-                'photo_path' => $application->photo_path,
-                'contact_number' => $application->whatsapp_number,
-                'guardian_name' => $guardianName,
-                'guardian_phone' => $guardianPhone,
-                'emergency_contact_name' => $application->mother_name ?: $application->father_name,
-                'emergency_contact_phone' => $application->mother_phone ?: $application->father_phone,
-                'authorized_pickup_persons' => $application->authorized_pickup_persons,
-                'home_address' => $application->home_address,
-            ]);
+            try {
+                $student = Student::create([
+                    'admission_number' => $admNumber,
+                    'full_name' => $application->child_full_name,
+                    'date_of_birth' => $application->date_of_birth,
+                    'gender' => $application->gender,
+                    'blood_group' => $application->blood_group,
+                    'allergies_medical_notes' => $application->medical_notes,
+                    'photo_path' => $application->photo_path,
+                    'contact_number' => $application->whatsapp_number,
+                    'guardian_name' => $guardianName,
+                    'guardian_phone' => $guardianPhone,
+                    'emergency_contact_name' => $application->mother_name ?: $application->father_name,
+                    'emergency_contact_phone' => $application->mother_phone ?: $application->father_phone,
+                    'authorized_pickup_persons' => $application->authorized_pickup_persons,
+                    'home_address' => $application->home_address,
+                ]);
+            } catch (UniqueConstraintViolationException $e) {
+                return back()->withInput()->withErrors([
+                    'admission_number' => "Admission number '{$admNumber}' is already in use by another student. Please enter a unique number or leave it blank to auto-generate.",
+                ]);
+            }
         }
 
         // 2. Enroll child in class

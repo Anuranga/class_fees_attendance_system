@@ -402,9 +402,16 @@
                         </div>
 
                         <div>
-                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Custom Admission No. (Optional)</label>
-                            <input type="text" name="admission_number" placeholder="Leave blank to auto-generate"
-                                   class="w-full px-4 py-2 rounded-xl border border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 text-slate-800 text-sm">
+                            <div class="flex items-center justify-between mb-1.5">
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600">Custom Admission No. (Optional)</label>
+                                <span class="text-[11px] text-slate-400 font-mono">Next: <strong class="text-indigo-600">{{ \App\Models\Student::generateAdmissionNumber() }}</strong></span>
+                            </div>
+                            <input type="text" name="admission_number" value="{{ old('admission_number') }}"
+                                   placeholder="Leave blank to auto-generate (e.g. {{ \App\Models\Student::generateAdmissionNumber() }})"
+                                   class="w-full px-4 py-2 rounded-xl border {{ $errors->has('admission_number') ? 'border-rose-400 ring-2 ring-rose-200' : 'border-slate-300' }} focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 text-slate-800 text-sm">
+                            @error('admission_number')
+                                <p class="text-xs text-rose-500 font-semibold mt-1">{{ $message }}</p>
+                            @enderror
                         </div>
                     </div>
                 </template>

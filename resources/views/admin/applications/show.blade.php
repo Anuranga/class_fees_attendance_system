@@ -226,11 +226,23 @@
                         </div>
 
                         <div>
-                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                                Admission Number (Optional)
-                            </label>
-                            <input type="text" name="admission_number" placeholder="Leave blank to auto-generate"
-                                   class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-mono">
+                            <div class="flex items-center justify-between mb-1">
+                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                                    Admission Number (Optional)
+                                </label>
+                                <span class="text-[11px] text-slate-400 font-mono">
+                                    Next: <strong class="text-indigo-600">{{ \App\Models\Student::generateAdmissionNumber() }}</strong>
+                                </span>
+                            </div>
+                            <input type="text" name="admission_number" value="{{ old('admission_number') }}"
+                                   placeholder="Leave blank to auto-generate (e.g. {{ \App\Models\Student::generateAdmissionNumber() }})"
+                                   class="w-full px-3 py-2 rounded-xl border {{ $errors->has('admission_number') ? 'border-rose-400 ring-2 ring-rose-200' : 'border-slate-300' }} text-xs font-mono">
+                            @error('admission_number')
+                                <p class="text-xs text-rose-500 font-semibold mt-1.5 flex items-center gap-1">
+                                    <i class="fa-solid fa-circle-exclamation text-rose-500"></i>
+                                    <span>{{ $message }}</span>
+                                </p>
+                            @enderror
                         </div>
 
                         <button type="submit" 

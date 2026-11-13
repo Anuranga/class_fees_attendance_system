@@ -9,6 +9,7 @@ use App\Models\ClassStudent;
 use App\Models\Payment;
 use App\Models\Student;
 use Carbon\Carbon;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -173,7 +174,9 @@ class ClassController extends Controller
                 'contact_number' => ['required', 'string', 'max:30'],
                 'guardian_name' => ['required', 'string', 'max:255'],
                 'guardian_phone' => ['required', 'string', 'max:30'],
-                'admission_number' => ['nullable', 'string', 'max:50'],
+                'admission_number' => ['nullable', 'string', 'max:50', 'unique:students,admission_number'],
+            ], [
+                'admission_number.unique' => "Admission number ':input' is already in use by another student. Please enter a unique number or leave it blank to auto-generate.",
             ]);
 
             $photoPath = null;
@@ -195,15 +198,23 @@ class ClassController extends Controller
                 return back()->withInput()->withErrors(['photo' => 'Photo upload failed: '.$request->file('photo')->getErrorMessage()]);
             }
 
-            $student = Student::create([
-                'admission_number' => (! empty($validated['admission_number'])) ? $validated['admission_number'] : Student::generateAdmissionNumber(),
-                'full_name' => $validated['full_name'],
-                'gender' => $validated['gender'] ?? 'male',
-                'photo_path' => $photoPath,
-                'contact_number' => trim($validated['contact_number']),
-                'guardian_name' => $validated['guardian_name'],
-                'guardian_phone' => trim($validated['guardian_phone']),
-            ]);
+            $admNumber = (! empty($validated['admission_number'])) ? trim($validated['admission_number']) : Student::generateAdmissionNumber();
+
+            try {
+                $student = Student::create([
+                    'admission_number' => $admNumber,
+                    'full_name' => $validated['full_name'],
+                    'gender' => $validated['gender'] ?? 'male',
+                    'photo_path' => $photoPath,
+                    'contact_number' => trim($validated['contact_number']),
+                    'guardian_name' => $validated['guardian_name'],
+                    'guardian_phone' => trim($validated['guardian_phone']),
+                ]);
+            } catch (UniqueConstraintViolationException $e) {
+                return back()->withInput()->withErrors([
+                    'admission_number' => "Admission number '{$admNumber}' is already registered for another student. Please enter a unique number or leave it blank to auto-generate.",
+                ]);
+            }
         }
 
         // Check if already enrolled

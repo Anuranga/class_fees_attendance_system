@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Application;
 use App\Models\ClassRoom;
 use App\Models\SchoolSetting;
+use App\Models\Student;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -128,6 +129,39 @@ class PreSchoolApplicationTest extends TestCase
         $passResponse = $this->get(route('public.pass', $enrollment->qr_token));
         $passResponse->assertStatus(200);
         $passResponse->assertSee('Maya Senulya');
+    }
+
+    public function test_enrolling_application_with_duplicate_admission_number_fails_validation(): void
+    {
+        // Existing student with admission number '001'
+        Student::create([
+            'admission_number' => '001',
+            'full_name' => 'Existing Student',
+            'contact_number' => '0771112233',
+            'guardian_name' => 'Guardian',
+            'guardian_phone' => '0771112233',
+        ]);
+
+        $app = Application::create([
+            'school_setting_id' => SchoolSetting::get()->id,
+            'application_number' => 'APP-2026-9999',
+            'child_full_name' => 'Duplicate Candidate',
+            'date_of_birth' => '2022-01-01',
+            'gender' => 'male',
+            'target_grade_level' => 'Nursery',
+            'whatsapp_number' => '0779998888',
+            'home_address' => 'Colombo Road',
+            'status' => 'pending',
+        ]);
+
+        // Try to enroll with already taken '001'
+        $response = $this->actingAs($this->admin)->post(route('admin.applications.enroll', $app), [
+            'class_id' => $this->classRoom->id,
+            'admission_number' => '001',
+        ]);
+
+        $response->assertSessionHasErrors(['admission_number']);
+        $this->assertDatabaseMissing('students', ['full_name' => 'Duplicate Candidate']);
     }
 
     public function test_parent_can_access_application_form_in_sinhala_via_tokenized_whatsapp_link(): void
