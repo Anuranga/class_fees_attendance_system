@@ -229,6 +229,13 @@
                     <span class="font-semibold text-emerald-600">Revenue: LKR {{ number_format($t->payments()->sum('amount'), 2) }}</span>
 
                     <div class="flex items-center gap-2">
+                        <a href="{{ route('public.teacher.pass', $t->qr_token) }}" target="_blank"
+                           class="px-2.5 py-1 rounded-lg text-indigo-600 hover:bg-indigo-50 font-bold transition-colors flex items-center gap-1" 
+                           title="View & Print Teacher ID Badge">
+                            <i class="fa-solid fa-id-badge text-xs"></i>
+                            <span>ID Badge</span>
+                        </a>
+
                         @if($t->status !== 'active')
                             <form action="{{ route('admin.users.approve', $t) }}" method="POST">
                                 @csrf

@@ -1,8 +1,10 @@
 <?php
 
 use App\Http\Controllers\Admin\ApplicationManagementController as AdminApplicationController;
+use App\Http\Controllers\Admin\ClassController as AdminClassController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\SchoolSettingController as AdminSchoolSettingController;
+use App\Http\Controllers\Admin\TeacherLeaveController as AdminTeacherLeaveController;
 use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\HomeController;
@@ -12,7 +14,9 @@ use App\Http\Controllers\Teacher\AttendanceController as TeacherAttendanceContro
 use App\Http\Controllers\Teacher\ClassController as TeacherClassController;
 use App\Http\Controllers\Teacher\DashboardController as TeacherDashboardController;
 use App\Http\Controllers\Teacher\FeeController as TeacherFeeController;
+use App\Http\Controllers\Teacher\LeaveController as TeacherLeaveController;
 use App\Http\Controllers\Teacher\UniformController as TeacherUniformController;
+use App\Http\Controllers\UniversalAttendanceController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 
@@ -40,7 +44,14 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::get('/join/{registration_token}', [PublicRegistrationController::class, 'showJoinForm'])->name('public.join');
 Route::post('/join/{registration_token}', [PublicRegistrationController::class, 'processJoin'])->name('public.join.process');
 Route::get('/student/pass/{qr_token}', [PublicRegistrationController::class, 'showStudentPass'])->name('public.pass');
+Route::get('/teacher/pass/{qr_token}', [UniversalAttendanceController::class, 'showTeacherPass'])->name('public.teacher.pass');
 Route::get('/student/lookup', [PublicRegistrationController::class, 'lookup'])->name('public.lookup');
+
+// Central Universal QR Attendance Scanner (Single Kiosk for Students & Teachers)
+Route::middleware(['auth'])->group(function () {
+    Route::get('/attendance/scan', [UniversalAttendanceController::class, 'showScanner'])->name('universal.attendance.scan');
+    Route::post('/attendance/scan', [UniversalAttendanceController::class, 'scan'])->name('universal.attendance.scan.post');
+});
 
 // Direct / Fallback route for uploaded student photos (ensures images always display even if server symlink is missing)
 Route::get('/storage/students/{filename}', function (string $filename) {
@@ -99,6 +110,10 @@ Route::middleware(['auth', 'role:teacher'])->prefix('teacher')->name('teacher.')
     Route::put('/assistants/{assistant}/classes', [TeacherAssistantController::class, 'updateClasses'])->name('assistants.update-classes');
     Route::post('/assistants/{assistant}/toggle-status', [TeacherAssistantController::class, 'toggleStatus'])->name('assistants.toggle-status');
     Route::delete('/assistants/{assistant}', [TeacherAssistantController::class, 'destroy'])->name('assistants.destroy');
+
+    // Teacher Leave Management
+    Route::get('/leaves', [TeacherLeaveController::class, 'index'])->name('leaves.index');
+    Route::post('/leaves', [TeacherLeaveController::class, 'store'])->name('leaves.store');
 });
 
 /*
@@ -108,11 +123,24 @@ Route::middleware(['auth', 'role:teacher'])->prefix('teacher')->name('teacher.')
 */
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
+
+    // Preschool Classes Management (LKG, UKG, Nursery, etc.)
+    Route::get('/classes', [AdminClassController::class, 'index'])->name('classes.index');
+    Route::post('/classes', [AdminClassController::class, 'store'])->name('classes.store');
+    Route::put('/classes/{class}', [AdminClassController::class, 'update'])->name('classes.update');
+    Route::delete('/classes/{class}', [AdminClassController::class, 'destroy'])->name('classes.destroy');
+
     Route::get('/teachers', [AdminDashboardController::class, 'teachers'])->name('teachers.index');
     Route::post('/teachers', [AdminDashboardController::class, 'storeTeacher'])->name('teachers.store');
     Route::post('/users/{user}/status', [AdminDashboardController::class, 'updateUserStatus'])->name('users.status');
     Route::post('/users/{user}/approve', [AdminDashboardController::class, 'approveUser'])->name('users.approve');
     Route::delete('/users/{user}', [AdminDashboardController::class, 'destroyUser'])->name('users.destroy');
+
+    // Faculty & Staff Leaves Review & Attendance
+    Route::get('/leaves', [AdminTeacherLeaveController::class, 'index'])->name('leaves.index');
+    Route::post('/leaves/{leave}/approve', [AdminTeacherLeaveController::class, 'approve'])->name('leaves.approve');
+    Route::post('/leaves/{leave}/reject', [AdminTeacherLeaveController::class, 'reject'])->name('leaves.reject');
+
     Route::get('/payments', [AdminDashboardController::class, 'payments'])->name('payments.index');
     Route::get('/students', [AdminDashboardController::class, 'students'])->name('students.index');
 

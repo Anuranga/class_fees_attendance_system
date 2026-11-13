@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -10,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Str;
 
 class User extends Authenticatable
 {
@@ -31,6 +33,7 @@ class User extends Authenticatable
         'teacher_id',
         'can_collect_fees',
         'can_manage_uniforms',
+        'qr_token',
     ];
 
     protected $casts = [
@@ -183,6 +186,15 @@ class User extends Authenticatable
         return true;
     }
 
+    protected static function booted()
+    {
+        static::creating(function ($user) {
+            if (empty($user->qr_token)) {
+                $user->qr_token = 'TCH-'.Str::upper(Str::random(12));
+            }
+        });
+    }
+
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class, 'teacher_id');
@@ -191,5 +203,26 @@ class User extends Authenticatable
     public function attendancesMarked(): HasMany
     {
         return $this->hasMany(Attendance::class, 'marked_by');
+    }
+
+    public function teacherAttendances(): HasMany
+    {
+        return $this->hasMany(TeacherAttendance::class, 'teacher_id');
+    }
+
+    public function leaves(): HasMany
+    {
+        return $this->hasMany(TeacherLeave::class, 'teacher_id');
+    }
+
+    public function isOnApprovedLeave(?string $date = null): bool
+    {
+        $date = $date ?? Carbon::today()->toDateString();
+
+        return $this->leaves()
+            ->where('status', 'approved')
+            ->where('start_date', '<=', $date)
+            ->where('end_date', '>=', $date)
+            ->exists();
     }
 }

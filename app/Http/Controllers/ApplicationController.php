@@ -15,7 +15,7 @@ class ApplicationController extends Controller
     /**
      * Show the public online admission application form (designed for WhatsApp distribution).
      */
-    public function create(?string $token = null): View
+    public function create(?string $token = null): View|RedirectResponse
     {
         $school = null;
         if ($token) {
@@ -25,7 +25,16 @@ class ApplicationController extends Controller
         }
 
         if (! $school) {
-            $school = SchoolSetting::first() ?? SchoolSetting::get();
+            $schools = SchoolSetting::all();
+            if ($schools->count() === 1) {
+                $onlySchool = $schools->first();
+
+                return redirect()->route('public.apply', $onlySchool->slug ?: $onlySchool->registration_token);
+            }
+            if ($schools->isNotEmpty()) {
+                return view('public.select-school', compact('schools'));
+            }
+            $school = SchoolSetting::get();
         }
 
         return view('public.apply', compact('school', 'token'));

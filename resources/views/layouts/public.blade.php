@@ -40,11 +40,7 @@
                     <i class="fa-solid fa-school text-xs text-amber-400"></i>
                     <span>Vision & Mission</span>
                 </a>
-                <a href="{{ route('public.apply') }}" class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow transition-all flex items-center gap-1">
-                    <i class="fa-solid fa-file-pen"></i>
-                    <span>Apply Online</span>
-                </a>
-                <a href="{{ route('public.apply.status') }}" class="text-slate-300 hover:text-white transition-colors flex items-center gap-1.5 hidden md:flex">
+                <a href="{{ route('public.apply.status') }}" class="text-slate-300 hover:text-white transition-colors flex items-center gap-1.5">
                     <i class="fa-solid fa-magnifying-glass text-xs text-cyan-400"></i>
                     <span>App Status</span>
                 </a>

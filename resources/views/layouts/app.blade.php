@@ -97,6 +97,24 @@
                         <span>System Analytics</span>
                     </a>
 
+                    <a href="{{ route('universal.attendance.scan') }}" 
+                       class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all {{ request()->routeIs('universal.attendance.scan') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                        <i class="fa-solid fa-qrcode w-5 text-center text-base text-emerald-400"></i>
+                        <span>Central QR Scanner</span>
+                    </a>
+
+                    <a href="{{ route('admin.classes.index') }}" 
+                       class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all {{ request()->routeIs('admin.classes.*') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                        <i class="fa-solid fa-shapes w-5 text-center text-base text-violet-400"></i>
+                        <span>Classes & Groups</span>
+                    </a>
+
+                    <a href="{{ route('admin.leaves.index') }}" 
+                       class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all {{ request()->routeIs('admin.leaves.*') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                        <i class="fa-solid fa-calendar-check w-5 text-center text-base text-amber-400"></i>
+                        <span>Staff Leaves & Att.</span>
+                    </a>
+
                     <a href="{{ route('admin.applications.link') }}" 
                        class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all {{ request()->routeIs('admin.applications.link') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                         <i class="fa-solid fa-paper-plane w-5 text-center text-base text-emerald-400"></i>
@@ -148,6 +166,18 @@
                        class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all {{ request()->routeIs('teacher.dashboard') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                         <i class="fa-solid fa-chart-line w-5 text-center text-base"></i>
                         <span>Dashboard & Analytics</span>
+                    </a>
+
+                    <a href="{{ route('universal.attendance.scan') }}" 
+                       class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all {{ request()->routeIs('universal.attendance.scan') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                        <i class="fa-solid fa-qrcode w-5 text-center text-base text-emerald-400"></i>
+                        <span>Central QR Scanner</span>
+                    </a>
+
+                    <a href="{{ route('teacher.leaves.index') }}" 
+                       class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all {{ request()->routeIs('teacher.leaves.*') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                        <i class="fa-solid fa-calendar-days w-5 text-center text-base text-amber-400"></i>
+                        <span>My Leaves (නිවාඩු)</span>
                     </a>
 
                     <a href="{{ route('teacher.classes.index') }}" 

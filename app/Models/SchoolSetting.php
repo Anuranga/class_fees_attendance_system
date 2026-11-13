@@ -58,6 +58,16 @@ class SchoolSetting extends Model
         return $this->hasMany(UniformItem::class, 'school_setting_id');
     }
 
+    public function teacherLeaves(): HasMany
+    {
+        return $this->hasMany(TeacherLeave::class, 'school_setting_id');
+    }
+
+    public function teacherAttendances(): HasMany
+    {
+        return $this->hasMany(TeacherAttendance::class, 'school_setting_id');
+    }
+
     public function applications(): HasMany
     {
         return $this->hasMany(Application::class, 'school_setting_id');
