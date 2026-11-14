@@ -162,7 +162,7 @@
 
                             <td class="px-4 py-3 whitespace-nowrap text-right">
                                 <div class="flex items-center justify-end gap-1.5">
-                                    @if($p->status !== 'active')
+                                    @if($p->status === 'pending')
                                         <form action="{{ route('super_admin.principals.approve', $p) }}" method="POST">
                                             @csrf
                                             <button type="submit" 
@@ -172,10 +172,9 @@
                                                 <span>Approve</span>
                                             </button>
                                         </form>
-                                    @endif
-
-                                    @if($p->status === 'active')
-                                        <form action="{{ route('super_admin.principals.block', $p) }}" method="POST">
+                                    @elseif($p->status === 'active')
+                                        <form action="{{ route('super_admin.principals.block', $p) }}" method="POST"
+                                              onsubmit="return confirm('Are you sure you want to block this principal? They will not be able to log in.');">
                                             @csrf
                                             <button type="submit" 
                                                     class="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold text-[11px] border border-rose-200 flex items-center gap-1 transition-all"
@@ -184,9 +183,7 @@
                                                 <span>Block</span>
                                             </button>
                                         </form>
-                                    @endif
-
-                                    @if($p->status === 'blocked')
+                                    @else
                                         <form action="{{ route('super_admin.principals.activate', $p) }}" method="POST">
                                             @csrf
                                             <button type="submit" 
