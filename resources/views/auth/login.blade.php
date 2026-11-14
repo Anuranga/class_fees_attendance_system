@@ -9,29 +9,29 @@
         <div class="w-14 h-14 rounded-2xl gradient-brand flex items-center justify-center text-white text-2xl mx-auto shadow-lg shadow-indigo-500/30 mb-4">
             <i class="fa-solid fa-graduation-cap"></i>
         </div>
-        <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Staff Portal Login</h1>
-        <p class="text-sm text-slate-400 mt-1">Sign in to manage your classes, mark attendance, and track fees</p>
+        <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Staff Portal Login</h1>
+        <p class="text-sm text-slate-600 dark:text-slate-400 mt-1">Sign in to manage your classes, mark attendance, and track fees</p>
     </div>
 
     <!-- Main Login Card -->
-    <div class="rounded-2xl bg-slate-800/80 border border-slate-700/80 p-8 shadow-2xl backdrop-blur-sm">
+    <div class="rounded-2xl bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 p-8 shadow-xl shadow-slate-200/50 dark:shadow-2xl backdrop-blur-sm transition-colors">
         
         @if(session('success'))
-            <div class="mb-5 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs font-medium flex items-center gap-2">
+            <div class="mb-5 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-xs font-medium flex items-center gap-2">
                 <i class="fa-solid fa-circle-check"></i>
                 <span>{{ session('success') }}</span>
             </div>
         @endif
 
         @if(session('info'))
-            <div class="mb-5 p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-300 text-xs font-medium flex items-center gap-2">
+            <div class="mb-5 p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-700 dark:text-blue-300 text-xs font-medium flex items-center gap-2">
                 <i class="fa-solid fa-circle-info"></i>
                 <span>{{ session('info') }}</span>
             </div>
         @endif
 
         @if(session('error'))
-            <div class="mb-5 p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs font-medium flex items-center gap-2">
+            <div class="mb-5 p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-700 dark:text-rose-300 text-xs font-medium flex items-center gap-2">
                 <i class="fa-solid fa-circle-exclamation"></i>
                 <span>{{ session('error') }}</span>
             </div>
@@ -42,57 +42,57 @@
 
             <!-- Email -->
             <div>
-                <label for="email" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Email Address</label>
+                <label for="email" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Email Address</label>
                 <div class="relative">
                     <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                         <i class="fa-solid fa-envelope text-sm"></i>
                     </div>
                     <input type="email" id="email" name="email" value="{{ old('email') }}" required autofocus
-                           class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-900/80 border border-slate-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 text-white placeholder-slate-500 text-sm transition-all"
+                           class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/80 border border-slate-300 dark:border-slate-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm transition-all"
                            placeholder="you@edutrack.test">
                 </div>
                 @error('email')
-                    <p class="mt-1.5 text-xs text-rose-400">{{ $message }}</p>
+                    <p class="mt-1.5 text-xs text-rose-500 dark:text-rose-400">{{ $message }}</p>
                 @enderror
             </div>
 
             <!-- Password -->
             <div>
-                <label for="password" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Password</label>
+                <label for="password" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Password</label>
                 <div class="relative">
                     <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                         <i class="fa-solid fa-lock text-sm"></i>
                     </div>
                     <input type="password" id="password" name="password" required
-                           class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-900/80 border border-slate-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 text-white placeholder-slate-500 text-sm transition-all"
+                           class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/80 border border-slate-300 dark:border-slate-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm transition-all"
                            placeholder="••••••••">
                 </div>
                 @error('password')
-                    <p class="mt-1.5 text-xs text-rose-400">{{ $message }}</p>
+                    <p class="mt-1.5 text-xs text-rose-500 dark:text-rose-400">{{ $message }}</p>
                 @enderror
             </div>
 
             <!-- Remember Me -->
             <div class="flex items-center justify-between text-xs">
-                <label class="flex items-center gap-2 text-slate-300 cursor-pointer">
-                    <input type="checkbox" name="remember" class="w-4 h-4 rounded bg-slate-900 border-slate-700 text-indigo-600 focus:ring-indigo-500/30">
+                <label class="flex items-center gap-2 text-slate-600 dark:text-slate-300 cursor-pointer">
+                    <input type="checkbox" name="remember" class="w-4 h-4 rounded bg-slate-100 dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-indigo-600 focus:ring-indigo-500/30">
                     <span>Remember this device</span>
                 </label>
             </div>
 
             <!-- Submit -->
             <button type="submit" 
-                    class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99] text-white font-bold text-sm shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center gap-2">
+                    class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99] text-white font-bold text-sm shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer">
                 <span>Sign In to Account</span>
                 <i class="fa-solid fa-arrow-right text-xs"></i>
             </button>
         </form>
 
-        <!-- Link to Register -->
-        <div class="mt-6 pt-5 border-t border-slate-700/60 text-center text-xs text-slate-400">
-            Are you an instructor without an account? 
-            <a href="{{ route('register') }}" class="font-bold text-indigo-400 hover:text-indigo-300 hover:underline transition-colors ml-1">
-                Register Teacher Account &rarr;
+        <!-- Link to Register Principal -->
+        <div class="mt-6 pt-5 border-t border-slate-200 dark:border-slate-700/60 text-center text-xs text-slate-500 dark:text-slate-400">
+            Are you a Pre-School Principal? 
+            <a href="{{ route('register') }}" class="font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 hover:underline transition-colors ml-1">
+                Register Pre-School &rarr;
             </a>
         </div>
     </div>

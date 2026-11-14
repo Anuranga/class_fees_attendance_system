@@ -10,6 +10,15 @@
 
     <title>@yield('title', 'Dashboard') - {{ config('app.name', 'EduTrack') }}</title>
 
+    <!-- Theme Initialization Script (Prevents flash of wrong theme) -->
+    <script>
+        if (localStorage.getItem('theme') === 'dark') {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
+
     <!-- Google Fonts: Plus Jakarta Sans -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -276,6 +285,16 @@
                     <a href="{{ route('home') }}" class="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors" title="Home">
                         <i class="fa-solid fa-house"></i>
                     </a>
+
+                    <!-- Theme Switcher Toggle (Light ☀️ / Dark 🌙) -->
+                    <button type="button" 
+                            onclick="toggleAppTheme()" 
+                            class="p-2 text-slate-500 hover:text-slate-800 dark:hover:text-amber-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+                            title="Toggle Light / Dark Theme"
+                            aria-label="Toggle Theme">
+                        <i class="fa-solid fa-sun hidden dark:block text-amber-400"></i>
+                        <i class="fa-solid fa-moon block dark:hidden text-slate-600"></i>
+                    </button>
                 </div>
             </header>
 
@@ -425,6 +444,12 @@
         </div>
     </div>
 
+    <script>
+        function toggleAppTheme() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        }
+    </script>
     @stack('scripts')
 </body>
 </html>
