@@ -8,6 +8,7 @@ use App\Http\Controllers\Teacher\AttendanceController as TeacherAttendanceContro
 use App\Http\Controllers\Teacher\ClassController as TeacherClassController;
 use App\Http\Controllers\Teacher\DashboardController as TeacherDashboardController;
 use App\Http\Controllers\Teacher\FeeController as TeacherFeeController;
+use App\Http\Controllers\Teacher\PaperController as TeacherPaperController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 
@@ -69,6 +70,14 @@ Route::middleware(['auth', 'role:teacher'])->prefix('teacher')->name('teacher.')
 
     // Daily Attendance & Cash Collection Ledger Sheet
     Route::get('/daily-sheet', [TeacherAttendanceController::class, 'dailySheet'])->name('daily.sheet');
+
+    // Paper Marks & Student Performance Graphs
+    Route::get('/papers', [TeacherPaperController::class, 'index'])->name('papers.index');
+    Route::post('/papers', [TeacherPaperController::class, 'store'])->name('papers.store');
+    Route::get('/papers/{paper}', [TeacherPaperController::class, 'show'])->name('papers.show');
+    Route::post('/papers/{paper}/marks', [TeacherPaperController::class, 'saveMarks'])->name('papers.save-marks');
+    Route::delete('/papers/{paper}', [TeacherPaperController::class, 'destroy'])->name('papers.destroy');
+    Route::get('/classes/{class}/students/{student}/results', [TeacherPaperController::class, 'studentGraph'])->name('papers.student-graph');
 
     // Fee Management & Cash Collections
     Route::get('/fees', [TeacherFeeController::class, 'index'])->name('fees.index');

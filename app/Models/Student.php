@@ -79,6 +79,11 @@ class Student extends Model
         return $this->hasMany(Payment::class, 'student_id');
     }
 
+    public function paperMarks(): HasMany
+    {
+        return $this->hasMany(PaperMark::class, 'student_id');
+    }
+
     /**
      * Generate next sequential admission number if not provided
      */

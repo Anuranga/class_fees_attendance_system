@@ -147,7 +147,13 @@
                     <a href="{{ route('teacher.daily.sheet') }}" 
                        class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all {{ request()->routeIs('teacher.daily.sheet') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
                         <i class="fa-solid fa-calendar-check w-5 text-center text-base text-emerald-400"></i>
-                        <span>Daily Sheet & Cash</span>
+                        <span>Daily Cash Book & Att.</span>
+                    </a>
+
+                    <a href="{{ route('teacher.papers.index') }}" 
+                       class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all {{ request()->routeIs('teacher.papers.*') ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white' }}">
+                        <i class="fa-solid fa-chart-column w-5 text-center text-base text-amber-400"></i>
+                        <span>Paper Marks & Graphs</span>
                     </a>
 
                     @if(Auth::user()->isTeacher())

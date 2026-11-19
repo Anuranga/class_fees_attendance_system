@@ -73,26 +73,33 @@
         </form>
 
         <!-- KPI Metric Cards Grid -->
-        <div class="mt-5 pt-5 border-t border-slate-100 grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div class="mt-5 pt-5 border-t border-slate-100 grid grid-cols-2 sm:grid-cols-5 gap-3">
             <!-- Total Cash In Hand -->
-            <div class="rounded-xl p-4 bg-gradient-to-br from-emerald-500/10 to-teal-500/10 border border-emerald-500/20">
+            <div class="rounded-xl p-4 bg-gradient-to-br from-emerald-500/10 to-teal-500/10 border border-emerald-500/20 col-span-2 sm:col-span-1">
                 <span class="text-[10px] font-bold text-emerald-800 uppercase tracking-wider">Total Cash Collected</span>
-                <p class="text-xl sm:text-2xl font-black text-emerald-700 mt-1">LKR {{ number_format($dailyCashTotal, 2) }}</p>
-                <p class="text-[11px] text-emerald-600 mt-0.5 font-medium">{{ $transactionsCount }} payment receipt(s) today</p>
+                <p class="text-lg sm:text-xl font-black text-emerald-700 mt-1">LKR {{ number_format($dailyCashTotal, 2) }}</p>
+                <p class="text-[11px] text-emerald-600 mt-0.5 font-medium">{{ $transactionsCount }} receipt(s) today</p>
             </div>
 
-            <!-- Total Attendance -->
+            <!-- Present Attendance -->
             <div class="rounded-xl p-4 bg-gradient-to-br from-indigo-500/10 to-blue-500/10 border border-indigo-500/20">
-                <span class="text-[10px] font-bold text-indigo-800 uppercase tracking-wider">Class Attendance</span>
+                <span class="text-[10px] font-bold text-indigo-800 uppercase tracking-wider">Present Students</span>
                 <p class="text-xl sm:text-2xl font-black text-indigo-700 mt-1">{{ $attendanceCount }}</p>
-                <p class="text-[11px] text-indigo-600 mt-0.5 font-medium">Students present or late</p>
+                <p class="text-[11px] text-indigo-600 mt-0.5 font-medium">Out of {{ $totalEnrolled }} enrolled</p>
+            </div>
+
+            <!-- Absent Students -->
+            <div class="rounded-xl p-4 bg-gradient-to-br from-rose-500/10 to-red-500/10 border border-rose-500/20">
+                <span class="text-[10px] font-bold text-rose-800 uppercase tracking-wider">Absent Students</span>
+                <p class="text-xl sm:text-2xl font-black text-rose-700 mt-1">{{ $absentCount }}</p>
+                <p class="text-[11px] text-rose-600 mt-0.5 font-medium">Not marked present today</p>
             </div>
 
             <!-- Tute Distribution -->
             <div class="rounded-xl p-4 bg-gradient-to-br from-purple-500/10 to-fuchsia-500/10 border border-purple-500/20">
-                <span class="text-[10px] font-bold text-purple-800 uppercase tracking-wider">Tute Materials Issued</span>
+                <span class="text-[10px] font-bold text-purple-800 uppercase tracking-wider">Tutes Issued</span>
                 <p class="text-xl sm:text-2xl font-black text-purple-700 mt-1">{{ $tuteCount }}</p>
-                <p class="text-[11px] text-purple-600 mt-0.5 font-medium">Handouts recorded today</p>
+                <p class="text-[11px] text-purple-600 mt-0.5 font-medium">Handouts recorded</p>
             </div>
 
             <!-- Receipts Count -->
@@ -104,29 +111,120 @@
         </div>
     </div>
 
-    <!-- Segmented Navigation Tabs: Attendance vs Cash Ledger -->
-    <div class="flex items-center gap-2 border-b border-slate-200">
+    <!-- Segmented Navigation Tabs: Attendance Report vs Daily Cash Book -->
+    <div class="flex items-center gap-2 border-b border-slate-200 overflow-x-auto">
         <button type="button" @click="activeTab = 'attendance'" 
                 :class="activeTab === 'attendance' ? 'border-indigo-600 text-indigo-600 font-extrabold' : 'border-transparent text-slate-500 hover:text-slate-800 font-semibold'"
-                class="py-3 px-4 border-b-2 text-sm flex items-center gap-2 transition-all">
+                class="py-3 px-4 border-b-2 text-sm flex items-center gap-2 transition-all whitespace-nowrap cursor-pointer">
             <i class="fa-solid fa-clipboard-user text-base"></i>
-            <span>Daily Attendance Register ({{ $attendances->count() }})</span>
+            <span>Attendance Report (Present: {{ $attendanceCount }} / Absent: {{ $absentCount }})</span>
         </button>
 
         <button type="button" @click="activeTab = 'cash'" 
                 :class="activeTab === 'cash' ? 'border-emerald-600 text-emerald-600 font-extrabold' : 'border-transparent text-slate-500 hover:text-slate-800 font-semibold'"
-                class="py-3 px-4 border-b-2 text-sm flex items-center gap-2 transition-all">
-            <i class="fa-solid fa-money-bill-wave text-base"></i>
-            <span>Daily Cash Collections (LKR {{ number_format($dailyCashTotal, 2) }})</span>
+                class="py-3 px-4 border-b-2 text-sm flex items-center gap-2 transition-all whitespace-nowrap cursor-pointer">
+            <i class="fa-solid fa-book-open text-base"></i>
+            <span>Daily Cash Book — Batch Wise & Total (LKR {{ number_format($dailyCashTotal, 2) }})</span>
         </button>
     </div>
 
-    <!-- Tab 1: Daily Attendance Register -->
-    <div x-show="activeTab === 'attendance'" class="space-y-4">
+    <!-- Tab 1: Daily Attendance Report (Present & Absent Names + Register) -->
+    <div x-show="activeTab === 'attendance'" class="space-y-6">
+
+        <!-- Batch-Wise Attendance Summary: Present & Absent Student Names -->
+        <div class="rounded-2xl bg-white border border-slate-200/80 shadow-xs overflow-hidden">
+            <div class="p-4 border-b border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-slate-50/50">
+                <div>
+                    <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                        <i class="fa-solid fa-list-check text-indigo-600"></i>
+                        <span>Attendance Report — Present & Absent Student Names</span>
+                    </h2>
+                    <p class="text-xs text-slate-500">Batch-wise list of Present and Absent students on {{ \Carbon\Carbon::parse($selectedDate)->format('M d, Y') }}</p>
+                </div>
+                <div class="flex items-center gap-2 text-xs font-bold">
+                    <span class="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        <i class="fa-solid fa-circle-check mr-1"></i> Present: {{ $attendanceCount }}
+                    </span>
+                    <span class="px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                        <i class="fa-solid fa-circle-xmark mr-1"></i> Absent: {{ $absentCount }}
+                    </span>
+                </div>
+            </div>
+
+            <div class="divide-y divide-slate-100">
+                @forelse($batchAttendanceReport as $report)
+                    <div class="p-4 sm:p-5 space-y-3">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <div class="flex items-center gap-2.5">
+                                <span class="px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs font-extrabold">
+                                    {{ $report['class']->name }}
+                                </span>
+                                <span class="text-xs text-slate-500 font-medium">{{ $report['class']->grade_level }}</span>
+                            </div>
+                            <div class="flex items-center gap-3 text-xs font-bold">
+                                <span class="text-slate-500">Enrolled: {{ $report['total_enrolled'] }}</span>
+                                <span class="text-emerald-700">Present: {{ $report['present_count'] }}</span>
+                                <span class="text-rose-600">Absent: {{ $report['absent_count'] }}</span>
+                                <span class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700">{{ $report['rate'] }}%</span>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Present Names Box -->
+                            <div class="rounded-xl bg-emerald-50/50 border border-emerald-200/70 p-3.5">
+                                <div class="text-[11px] font-extrabold uppercase tracking-wider text-emerald-800 mb-2 flex items-center justify-between">
+                                    <span><i class="fa-solid fa-user-check mr-1"></i> Present Students ({{ $report['present_count'] }})</span>
+                                </div>
+                                @if($report['present_students']->isNotEmpty())
+                                    <div class="flex flex-wrap gap-1.5">
+                                        @foreach($report['present_students'] as $item)
+                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border border-emerald-200 text-xs font-semibold text-slate-800 shadow-2xs">
+                                                <span class="w-1.5 h-1.5 rounded-full {{ $item['status'] === 'late' ? 'bg-amber-500' : 'bg-emerald-500' }}"></span>
+                                                <span>{{ $item['student']->full_name }}</span>
+                                                @if($item['status'] === 'late')
+                                                    <span class="text-[10px] font-bold text-amber-600">(Late)</span>
+                                                @endif
+                                            </span>
+                                        @endforeach
+                                    </div>
+                                @else
+                                    <p class="text-xs text-slate-400 italic">No students marked present in this batch.</p>
+                                @endif
+                            </div>
+
+                            <!-- Absent Names Box -->
+                            <div class="rounded-xl bg-rose-50/50 border border-rose-200/70 p-3.5">
+                                <div class="text-[11px] font-extrabold uppercase tracking-wider text-rose-800 mb-2 flex items-center justify-between">
+                                    <span><i class="fa-solid fa-user-xmark mr-1"></i> Absent Students ({{ $report['absent_count'] }})</span>
+                                </div>
+                                @if($report['absent_students']->isNotEmpty())
+                                    <div class="flex flex-wrap gap-1.5">
+                                        @foreach($report['absent_students'] as $item)
+                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border border-rose-200 text-xs font-semibold text-rose-900 shadow-2xs">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                                                <span>{{ $item['student']->full_name }}</span>
+                                                <span class="text-[10px] font-mono text-slate-400">({{ $item['student']->admission_number }})</span>
+                                            </span>
+                                        @endforeach
+                                    </div>
+                                @else
+                                    <p class="text-xs text-emerald-700 font-semibold italic"><i class="fa-solid fa-sparkles mr-1"></i> 100% Attendance — No absent students!</p>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                @empty
+                    <div class="p-8 text-center text-xs text-slate-400">
+                        No classes/batches available to generate attendance report.
+                    </div>
+                @endforelse
+            </div>
+        </div>
+
         <div class="rounded-2xl bg-white border border-slate-200/80 shadow-xs overflow-hidden">
             <div class="p-4 border-b border-slate-200/80 flex items-center justify-between">
                 <div>
-                    <h2 class="text-base font-bold text-slate-900">Students Attended on {{ \Carbon\Carbon::parse($selectedDate)->format('M d, Y') }}</h2>
+                    <h2 class="text-base font-bold text-slate-900">Present Students Register — {{ \Carbon\Carbon::parse($selectedDate)->format('M d, Y') }}</h2>
                     <p class="text-xs text-slate-500">Includes check-in time, tutorial material handover, and fees recorded on this day</p>
                 </div>
             </div>
@@ -257,15 +355,173 @@
                 </table>
             </div>
         </div>
+
+        <!-- Absent Students Detailed List -->
+        <div class="rounded-2xl bg-white border border-rose-200/80 shadow-xs overflow-hidden">
+            <div class="p-4 border-b border-rose-100 bg-rose-50/40 flex items-center justify-between">
+                <div>
+                    <h2 class="text-base font-bold text-rose-900 flex items-center gap-2">
+                        <i class="fa-solid fa-user-xmark text-rose-600"></i>
+                        <span>Absent Students ({{ $absentCount }}) — {{ \Carbon\Carbon::parse($selectedDate)->format('M d, Y') }}</span>
+                    </h2>
+                    <p class="text-xs text-rose-700/80">Enrolled students who were not marked present on this date</p>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse min-w-[650px]">
+                    <thead class="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                        <tr>
+                            <th class="py-3 px-4">Student Name</th>
+                            <th class="py-3 px-4">Batch / Class</th>
+                            <th class="py-3 px-4">Contact / Guardian Phone</th>
+                            <th class="py-3 px-4">Status</th>
+                            <th class="py-3 px-4 text-right print:hidden">Quick Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 text-xs">
+                        @forelse($absentEnrollments as $enrollment)
+                            <tr class="hover:bg-rose-50/30 transition-colors">
+                                <td class="py-3 px-4">
+                                    <div class="flex items-center gap-3">
+                                        <img src="{{ $enrollment->student->avatar_url }}" alt="{{ $enrollment->student->full_name }}"
+                                             class="w-8 h-8 rounded-full object-cover border border-rose-200 shadow-xs shrink-0 bg-slate-100"
+                                             onerror="this.onerror=null; this.src='{{ asset('images/avatars/' . ($enrollment->student->gender === 'female' ? 'female.svg' : 'male.svg')) }}';">
+                                        <div>
+                                            <p class="font-bold text-slate-900">{{ $enrollment->student->full_name }}</p>
+                                            <p class="text-[11px] text-slate-400 font-mono">{{ $enrollment->student->admission_number }}</p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="py-3 px-4 font-semibold text-slate-800">
+                                    {{ $enrollment->classRoom->name }}
+                                    <span class="text-[10px] text-slate-400 block font-normal">{{ $enrollment->classRoom->grade_level }}</span>
+                                </td>
+                                <td class="py-3 px-4 text-slate-600 font-mono">
+                                    {{ $enrollment->student->guardian_phone ?: ($enrollment->student->contact_number ?: '—') }}
+                                    @if($enrollment->student->guardian_name)
+                                        <span class="block text-[10px] font-sans text-slate-400">{{ $enrollment->student->guardian_name }}</span>
+                                    @endif
+                                </td>
+                                <td class="py-3 px-4">
+                                    <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-100 text-rose-700">
+                                        Absent
+                                    </span>
+                                </td>
+                                <td class="py-3 px-4 text-right print:hidden">
+                                    <form action="{{ route('teacher.attendance.manual', $enrollment->classRoom) }}" method="POST" class="inline">
+                                        @csrf
+                                        <input type="hidden" name="student_id" value="{{ $enrollment->student_id }}">
+                                        <input type="hidden" name="date" value="{{ $selectedDate }}">
+                                        <input type="hidden" name="status" value="present">
+                                        <button type="submit" class="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-bold text-[11px] inline-flex items-center gap-1 transition-colors cursor-pointer">
+                                            <i class="fa-solid fa-check text-[10px]"></i>
+                                            <span>Mark Present</span>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="5" class="py-8 text-center text-emerald-700 font-semibold text-xs">
+                                    <i class="fa-solid fa-circle-check text-xl text-emerald-500 mb-1 block"></i>
+                                    All enrolled students are present for {{ \Carbon\Carbon::parse($selectedDate)->format('F d, Y') }}!
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
-    <!-- Tab 2: Daily Cash Collections Ledger -->
-    <div x-show="activeTab === 'cash'" class="space-y-4" style="display: none;">
+    <!-- Tab 2: Daily Cash Book (Batch Wise & Total + Itemized Ledger) -->
+    <div x-show="activeTab === 'cash'" class="space-y-6" style="display: none;">
+
+        <!-- Batch-Wise Daily Cash Book Summary -->
+        <div class="rounded-2xl bg-white border border-emerald-200/80 shadow-xs overflow-hidden">
+            <div class="p-4 border-b border-emerald-100 bg-emerald-50/40 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                    <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                        <i class="fa-solid fa-book-open text-emerald-600"></i>
+                        <span>Daily Cash Book — Batch Wise & Total</span>
+                    </h2>
+                    <p class="text-xs text-slate-600">Batch-by-batch daily collection summary for {{ \Carbon\Carbon::parse($selectedDate)->format('l, M d, Y') }}</p>
+                </div>
+
+                <div class="text-right">
+                    <span class="text-[10px] text-emerald-700 uppercase tracking-wider font-extrabold">Grand Total Today</span>
+                    <p class="text-xl font-black text-emerald-700 font-mono">LKR {{ number_format($dailyCashTotal, 2) }}</p>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse min-w-[680px]">
+                    <thead class="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                        <tr>
+                            <th class="py-3 px-4">Batch / Class</th>
+                            <th class="py-3 px-4 text-center">Receipts</th>
+                            <th class="py-3 px-4 text-right">Monthly Fees</th>
+                            <th class="py-3 px-4 text-right">Daily Fees</th>
+                            <th class="py-3 px-4 text-right">Cash</th>
+                            <th class="py-3 px-4 text-right">Bank / Other</th>
+                            <th class="py-3 px-4 text-right">Batch Total</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 text-xs">
+                        @forelse($batchCashBook as $row)
+                            <tr class="hover:bg-emerald-50/30 transition-colors {{ $row['batch_total'] > 0 ? '' : 'opacity-60' }}">
+                                <td class="py-3 px-4">
+                                    <p class="font-bold text-slate-900">{{ $row['class']->name }}</p>
+                                    <p class="text-[10px] text-slate-400">{{ $row['class']->grade_level }}</p>
+                                </td>
+                                <td class="py-3 px-4 text-center">
+                                    <span class="px-2 py-0.5 rounded-full text-[11px] font-bold {{ $row['receipts_count'] > 0 ? 'bg-indigo-50 text-indigo-700' : 'bg-slate-100 text-slate-500' }}">
+                                        {{ $row['receipts_count'] }}
+                                    </span>
+                                </td>
+                                <td class="py-3 px-4 text-right font-mono text-slate-700">
+                                    LKR {{ number_format($row['monthly_total'], 2) }}
+                                </td>
+                                <td class="py-3 px-4 text-right font-mono text-slate-700">
+                                    LKR {{ number_format($row['daily_total'], 2) }}
+                                </td>
+                                <td class="py-3 px-4 text-right font-mono text-emerald-700 font-semibold">
+                                    LKR {{ number_format($row['cash_method_total'], 2) }}
+                                </td>
+                                <td class="py-3 px-4 text-right font-mono text-slate-600">
+                                    LKR {{ number_format($row['other_method_total'], 2) }}
+                                </td>
+                                <td class="py-3 px-4 text-right font-mono font-black text-slate-900 text-sm">
+                                    LKR {{ number_format($row['batch_total'], 2) }}
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="7" class="py-8 text-center text-slate-400">No batches found.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                    <tfoot class="bg-emerald-50/70 border-t-2 border-emerald-200 text-xs font-extrabold text-slate-900">
+                        <tr>
+                            <td class="py-3.5 px-4 uppercase tracking-wider">Grand Total (All Batches)</td>
+                            <td class="py-3.5 px-4 text-center">{{ $transactionsCount }}</td>
+                            <td class="py-3.5 px-4 text-right font-mono">LKR {{ number_format($grandMonthlyTotal, 2) }}</td>
+                            <td class="py-3.5 px-4 text-right font-mono">LKR {{ number_format($grandDailyTotal, 2) }}</td>
+                            <td class="py-3.5 px-4 text-right font-mono text-emerald-800">LKR {{ number_format($grandCashMethodTotal, 2) }}</td>
+                            <td class="py-3.5 px-4 text-right font-mono">LKR {{ number_format($grandOtherMethodTotal, 2) }}</td>
+                            <td class="py-3.5 px-4 text-right font-mono font-black text-emerald-700 text-base">LKR {{ number_format($dailyCashTotal, 2) }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
         <div class="rounded-2xl bg-white border border-slate-200/80 shadow-xs overflow-hidden">
             <div class="p-4 border-b border-slate-200/80 flex items-center justify-between">
                 <div>
-                    <h2 class="text-base font-bold text-slate-900">Cash Collections on {{ \Carbon\Carbon::parse($selectedDate)->format('M d, Y') }}</h2>
-                    <p class="text-xs text-slate-500">Itemized ledger of all cash payments received on this specific date</p>
+                    <h2 class="text-base font-bold text-slate-900">Itemized Cash Receipts on {{ \Carbon\Carbon::parse($selectedDate)->format('M d, Y') }}</h2>
+                    <p class="text-xs text-slate-500">Individual receipt entries recorded across batches on this date</p>
                 </div>
 
                 <div class="text-right">

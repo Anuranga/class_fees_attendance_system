@@ -87,6 +87,11 @@ class ClassRoom extends Model
         return $this->hasMany(Payment::class, 'class_id');
     }
 
+    public function papers(): HasMany
+    {
+        return $this->hasMany(Paper::class, 'class_id');
+    }
+
     public function getJoinUrlAttribute(): string
     {
         return url('/join/'.$this->registration_token);

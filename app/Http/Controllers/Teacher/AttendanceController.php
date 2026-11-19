@@ -414,20 +414,100 @@ class AttendanceController extends Controller
         // 1. Attendances for the selected date
         $attendances = Attendance::with(['student', 'classRoom', 'markedBy'])
             ->whereIn('class_id', $filteredClassIds)
-            ->where('date', $date)
+            ->whereDate('date', $date)
             ->orderBy('check_in_time', 'desc')
             ->get();
 
-        // 2. Payments collected on this specific date
+        // 2. Active enrollments for the filtered batches (to compute Present & Absent student lists)
+        $activeEnrollments = ClassStudent::with(['student', 'classRoom'])
+            ->whereIn('class_id', $filteredClassIds)
+            ->where('status', 'active')
+            ->get()
+            ->sortBy(fn (ClassStudent $e): string => strtolower($e->classRoom->name.' '.$e->student->full_name))
+            ->values();
+
+        $presentLookup = $attendances
+            ->whereIn('status', ['present', 'late'])
+            ->keyBy(fn (Attendance $att): string => $att->class_id.'-'.$att->student_id);
+
+        $absentEnrollments = $activeEnrollments
+            ->reject(fn (ClassStudent $e): bool => $presentLookup->has($e->class_id.'-'.$e->student_id))
+            ->values();
+
+        // 3. Payments collected on this specific date
         $payments = Payment::with(['student', 'classRoom', 'collector'])
             ->whereIn('class_id', $filteredClassIds)
             ->whereDate('paid_date', $date)
             ->orderBy('created_at', 'desc')
             ->get();
 
+        // 4. Batch-Wise Cash Book & Batch-Wise Attendance Report
+        $filteredClasses = $classes->whereIn('id', $filteredClassIds)->values();
+
+        $batchCashBook = $filteredClasses->map(function (ClassRoom $class) use ($payments): array {
+            $batchPayments = $payments->where('class_id', $class->id);
+            $monthlyTotal = (float) $batchPayments->where('payment_type', '!=', 'daily')->sum('amount');
+            $dailyTotal = (float) $batchPayments->where('payment_type', 'daily')->sum('amount');
+            $cashMethodTotal = (float) $batchPayments->filter(fn (Payment $p): bool => strtolower((string) $p->payment_method) === 'cash')->sum('amount');
+            $otherMethodTotal = (float) $batchPayments->filter(fn (Payment $p): bool => strtolower((string) $p->payment_method) !== 'cash')->sum('amount');
+
+            return [
+                'class' => $class,
+                'receipts_count' => $batchPayments->count(),
+                'monthly_total' => $monthlyTotal,
+                'daily_total' => $dailyTotal,
+                'cash_method_total' => $cashMethodTotal,
+                'other_method_total' => $otherMethodTotal,
+                'batch_total' => (float) $batchPayments->sum('amount'),
+            ];
+        });
+
+        $batchAttendanceReport = $filteredClasses->map(function (ClassRoom $class) use ($activeEnrollments, $presentLookup): array {
+            $batchEnrollments = $activeEnrollments->where('class_id', $class->id)->values();
+            $presentList = collect();
+            $absentList = collect();
+
+            foreach ($batchEnrollments as $enrollment) {
+                $key = $class->id.'-'.$enrollment->student_id;
+                if ($presentLookup->has($key)) {
+                    $att = $presentLookup->get($key);
+                    $presentList->push([
+                        'student' => $enrollment->student,
+                        'status' => $att->status,
+                        'check_in_time' => $att->check_in_time,
+                    ]);
+                } else {
+                    $absentList->push([
+                        'student' => $enrollment->student,
+                        'enrollment' => $enrollment,
+                    ]);
+                }
+            }
+
+            $totalBatch = $batchEnrollments->count();
+            $presentCountBatch = $presentList->count();
+
+            return [
+                'class' => $class,
+                'total_enrolled' => $totalBatch,
+                'present_count' => $presentCountBatch,
+                'absent_count' => $absentList->count(),
+                'rate' => $totalBatch > 0 ? round(($presentCountBatch / $totalBatch) * 100, 1) : 0,
+                'present_students' => $presentList,
+                'absent_students' => $absentList,
+            ];
+        });
+
         // Total cash collected on this date
-        $dailyCashTotal = $payments->sum('amount');
+        $dailyCashTotal = (float) $payments->sum('amount');
+        $grandMonthlyTotal = (float) $batchCashBook->sum('monthly_total');
+        $grandDailyTotal = (float) $batchCashBook->sum('daily_total');
+        $grandCashMethodTotal = (float) $batchCashBook->sum('cash_method_total');
+        $grandOtherMethodTotal = (float) $batchCashBook->sum('other_method_total');
+
         $attendanceCount = $attendances->whereIn('status', ['present', 'late'])->count();
+        $totalEnrolled = $activeEnrollments->count();
+        $absentCount = $absentEnrollments->count();
         $tuteCount = $attendances->where('tute_provided', true)->count();
         $transactionsCount = $payments->count();
 
@@ -440,10 +520,19 @@ class AttendanceController extends Controller
             'selectedDate' => $date,
             'isToday' => ($date === Carbon::today()->toDateString()),
             'attendances' => $attendances,
+            'absentEnrollments' => $absentEnrollments,
+            'batchAttendanceReport' => $batchAttendanceReport,
+            'batchCashBook' => $batchCashBook,
             'payments' => $payments,
             'paymentsByStudent' => $paymentsByStudent,
             'dailyCashTotal' => $dailyCashTotal,
+            'grandMonthlyTotal' => $grandMonthlyTotal,
+            'grandDailyTotal' => $grandDailyTotal,
+            'grandCashMethodTotal' => $grandCashMethodTotal,
+            'grandOtherMethodTotal' => $grandOtherMethodTotal,
             'attendanceCount' => $attendanceCount,
+            'totalEnrolled' => $totalEnrolled,
+            'absentCount' => $absentCount,
             'tuteCount' => $tuteCount,
             'transactionsCount' => $transactionsCount,
         ]);

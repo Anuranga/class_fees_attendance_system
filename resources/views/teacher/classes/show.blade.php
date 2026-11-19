@@ -46,6 +46,12 @@
                 <span>Open QR Scanner</span>
             </a>
 
+            <a href="{{ route('teacher.papers.index', ['class_id' => $classRoom->id]) }}" 
+               class="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold shadow-md shadow-amber-500/20 flex items-center gap-2 transition-all">
+                <i class="fa-solid fa-chart-column text-sm"></i>
+                <span>Paper Marks & Graphs</span>
+            </a>
+
             <button @click="addStudentModal = true" 
                     class="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-md shadow-indigo-600/30 flex items-center gap-2 transition-all">
                 <i class="fa-solid fa-user-plus"></i>
@@ -231,6 +237,14 @@
                                         <i class="fa-regular fa-calendar-days text-emerald-600"></i>
                                         <span>Attendance</span>
                                     </button>
+
+                                    <!-- View Paper Results Graph -->
+                                    <a href="{{ route('teacher.papers.student-graph', [$classRoom, $enrollment->student]) }}"
+                                       class="px-2.5 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold text-xs border border-amber-200 transition-colors flex items-center gap-1 shadow-2xs"
+                                       title="View Paper Marks & Graph">
+                                        <i class="fa-solid fa-chart-line text-amber-600"></i>
+                                        <span>Marks</span>
+                                    </a>
 
                                     <!-- Print ID Pass -->
                                     <a href="{{ route('public.pass', $enrollment->qr_token) }}" target="_blank"
