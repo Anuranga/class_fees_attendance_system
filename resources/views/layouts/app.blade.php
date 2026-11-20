@@ -335,6 +335,128 @@
         </div>
     </div>
 
+    <!-- Beautiful Global Delete / Remove Confirmation Modal -->
+    <div x-data="confirmDialogManager()"
+         x-init="init()"
+         @keydown.escape.window="close()"
+         x-show="open"
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-[100] overflow-y-auto bg-slate-950/65 backdrop-blur-sm flex items-center justify-center p-4"
+         style="display: none;"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="confirm-modal-title">
+
+        <div @click.outside="close()"
+             x-show="open"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0 scale-95 translate-y-2"
+             x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+             x-transition:leave-end="opacity-0 scale-95 translate-y-2"
+             class="w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-200/80 overflow-hidden">
+
+            <!-- Top Danger Accent Bar -->
+            <div class="h-1.5 w-full bg-gradient-to-r from-rose-500 via-red-500 to-amber-500"></div>
+
+            <div class="p-6 sm:p-7">
+                <!-- Icon & Heading -->
+                <div class="flex items-start gap-4">
+                    <div class="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-200/80 text-rose-600 flex items-center justify-center text-xl shrink-0 shadow-xs">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h3 id="confirm-modal-title" class="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight" x-text="title"></h3>
+                        <p class="text-xs sm:text-sm text-slate-600 mt-1 leading-relaxed" x-text="message"></p>
+                    </div>
+                </div>
+
+                <!-- Target Item Highlight Pill -->
+                <template x-if="item">
+                    <div class="mt-4 px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center gap-2.5 text-xs">
+                        <i class="fa-solid fa-tag text-rose-500"></i>
+                        <span class="font-bold text-slate-800 truncate" x-text="item"></span>
+                    </div>
+                </template>
+
+                <!-- Permanent Action Notice -->
+                <div class="mt-4 p-3 rounded-xl bg-rose-50/70 border border-rose-200/60 flex items-start gap-2.5 text-[11px] text-rose-800">
+                    <i class="fa-solid fa-circle-info text-rose-500 mt-0.5 shrink-0"></i>
+                    <span>This action cannot be undone. Please verify before confirming.</span>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="mt-6 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2.5">
+                    <button type="button"
+                            @click="close()"
+                            class="w-full sm:w-auto px-5 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition-all cursor-pointer">
+                        Cancel
+                    </button>
+                    <button type="button"
+                            @click="confirm()"
+                            class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 active:scale-[0.98] text-white text-xs font-bold shadow-lg shadow-rose-600/30 flex items-center justify-center gap-2 transition-all cursor-pointer">
+                        <i class="fa-solid fa-trash-can"></i>
+                        <span x-text="confirmText"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function confirmDialogManager() {
+            return {
+                open: false,
+                title: 'Confirm Removal',
+                message: 'Are you sure you want to remove this record?',
+                item: '',
+                confirmText: 'Yes, Delete',
+                pendingForm: null,
+
+                init() {
+                    document.addEventListener('submit', (event) => {
+                        const form = event.target;
+                        if (!(form instanceof HTMLFormElement)) return;
+                        if (!form.hasAttribute('data-confirm-title') && !form.hasAttribute('data-confirm-message')) return;
+                        if (form.dataset.confirmed === 'true') {
+                            delete form.dataset.confirmed;
+                            return;
+                        }
+
+                        event.preventDefault();
+                        this.pendingForm = form;
+                        this.title = form.dataset.confirmTitle || 'Confirm Removal';
+                        this.message = form.dataset.confirmMessage || 'Are you sure you want to delete this record?';
+                        this.item = form.dataset.confirmItem || '';
+                        this.confirmText = form.dataset.confirmButton || 'Yes, Delete';
+                        this.open = true;
+                    }, true);
+                },
+
+                close() {
+                    this.open = false;
+                    this.pendingForm = null;
+                },
+
+                confirm() {
+                    if (this.pendingForm) {
+                        const formToSubmit = this.pendingForm;
+                        this.open = false;
+                        this.pendingForm = null;
+                        formToSubmit.dataset.confirmed = 'true';
+                        formToSubmit.requestSubmit ? formToSubmit.requestSubmit() : formToSubmit.submit();
+                    }
+                }
+            };
+        }
+    </script>
+
     @stack('scripts')
 </body>
 </html>

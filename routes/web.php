@@ -56,6 +56,7 @@ Route::middleware(['auth', 'role:teacher'])->prefix('teacher')->name('teacher.')
     Route::post('/classes', [TeacherClassController::class, 'store'])->name('classes.store');
     Route::get('/classes/{class}', [TeacherClassController::class, 'show'])->name('classes.show');
     Route::put('/classes/{class}', [TeacherClassController::class, 'update'])->name('classes.update');
+    Route::delete('/classes/{class}', [TeacherClassController::class, 'destroy'])->name('classes.destroy');
     Route::post('/classes/{class}/toggle-registration', [TeacherClassController::class, 'toggleRegistration'])->name('classes.toggle-registration');
     Route::post('/classes/{class}/students/manual', [TeacherClassController::class, 'enrollStudentManual'])->name('classes.students.manual');
     Route::delete('/classes/{class}/students/{student}', [TeacherClassController::class, 'removeStudent'])->name('classes.students.remove');

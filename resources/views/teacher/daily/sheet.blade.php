@@ -332,12 +332,16 @@
 
                                 <!-- Action -->
                                 <td class="py-3 px-4 text-right">
-                                    <form action="{{ route('teacher.attendance.manual', $record->classRoom) }}" method="POST" class="inline">
+                                    <form action="{{ route('teacher.attendance.manual', $record->classRoom) }}" method="POST" class="inline"
+                                          data-confirm-title="Remove Attendance Record?"
+                                          data-confirm-message="This student will be marked as absent for {{ \Carbon\Carbon::parse($selectedDate)->format('M d, Y') }}."
+                                          data-confirm-item="{{ $record->student->full_name }} ({{ $record->classRoom->name }})"
+                                          data-confirm-button="Mark Absent">
                                         @csrf
                                         <input type="hidden" name="student_id" value="{{ $record->student_id }}">
                                         <input type="hidden" name="date" value="{{ $selectedDate }}">
                                         <input type="hidden" name="status" value="absent">
-                                        <button type="submit" class="text-xs text-rose-600 hover:text-rose-800 font-semibold p-1" title="Mark Absent / Remove from list">
+                                        <button type="submit" class="text-xs text-rose-600 hover:text-rose-800 font-semibold p-1 cursor-pointer" title="Mark Absent / Remove from list">
                                             <i class="fa-solid fa-trash-can"></i>
                                         </button>
                                     </form>

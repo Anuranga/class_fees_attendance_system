@@ -253,4 +253,48 @@ class DailyCashBookAndPaperMarksTest extends TestCase
             ->delete(route('teacher.papers.destroy', $paper))
             ->assertForbidden();
     }
+
+    public function test_teacher_can_delete_own_class_but_assistant_and_other_teachers_cannot(): void
+    {
+        $teacher1 = $this->createTeacher('owner@test.lk');
+        $teacher2 = $this->createTeacher('other@test.lk');
+
+        $assistant = User::create([
+            'name' => 'Class Assistant',
+            'email' => 'assistant@test.lk',
+            'password' => Hash::make('password123'),
+            'role' => 'assistant',
+            'teacher_id' => $teacher1->id,
+            'status' => 'active',
+        ]);
+
+        $class = ClassRoom::create([
+            'teacher_id' => $teacher1->id,
+            'name' => 'Biology Evening Batch',
+            'grade_level' => 'Grade 12',
+            'monthly_fee' => 2500,
+        ]);
+
+        $assistant->assignedClasses()->attach($class->id);
+
+        // Assistant cannot delete class
+        $this->actingAs($assistant)
+            ->delete(route('teacher.classes.destroy', $class))
+            ->assertForbidden();
+
+        // Another teacher cannot delete class
+        $this->actingAs($teacher2)
+            ->delete(route('teacher.classes.destroy', $class))
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('classes', ['id' => $class->id]);
+
+        // Owning teacher can delete class
+        $this->actingAs($teacher1)
+            ->delete(route('teacher.classes.destroy', $class))
+            ->assertRedirect(route('teacher.classes.index'))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseMissing('classes', ['id' => $class->id]);
+    }
 }

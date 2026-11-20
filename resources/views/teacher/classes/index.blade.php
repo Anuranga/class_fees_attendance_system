@@ -110,14 +110,33 @@
                         </a>
                     </div>
 
-                    <form action="{{ route('teacher.classes.toggle-registration', $class) }}" method="POST">
-                        @csrf
-                        <button type="submit" 
-                                class="w-full py-1.5 px-3 rounded-xl text-[11px] font-semibold text-slate-600 hover:bg-slate-100 transition-colors flex items-center justify-center gap-1.5">
-                            <i class="fa-solid {{ $class->is_registration_open ? 'fa-pause' : 'fa-play' }}"></i>
-                            <span>{{ $class->is_registration_open ? 'Pause Self-Registration' : 'Re-open Self-Registration' }}</span>
-                        </button>
-                    </form>
+                    <div class="flex items-center gap-1.5">
+                        <form action="{{ route('teacher.classes.toggle-registration', $class) }}" method="POST" class="flex-1">
+                            @csrf
+                            <button type="submit" 
+                                    class="w-full py-1.5 px-3 rounded-xl text-[11px] font-semibold text-slate-600 hover:bg-slate-100 transition-colors flex items-center justify-center gap-1.5 cursor-pointer">
+                                <i class="fa-solid {{ $class->is_registration_open ? 'fa-pause' : 'fa-play' }}"></i>
+                                <span>{{ $class->is_registration_open ? 'Pause Registration' : 'Re-open Registration' }}</span>
+                            </button>
+                        </form>
+
+                        @if(!Auth::user()->isAssistant())
+                            <form action="{{ route('teacher.classes.destroy', $class) }}" method="POST"
+                                  data-confirm-title="Delete Class?"
+                                  data-confirm-message="Deleting this class will permanently remove all its enrollments, attendance logs, fee receipts, and paper marks."
+                                  data-confirm-item="{{ $class->name }} ({{ $class->grade_level }})"
+                                  data-confirm-button="Delete Class">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit"
+                                        class="py-1.5 px-2.5 rounded-xl text-[11px] font-semibold text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition-colors flex items-center gap-1 cursor-pointer"
+                                        title="Delete Class">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                    <span>Delete</span>
+                                </button>
+                            </form>
+                        @endif
+                    </div>
                 </div>
             </div>
         @empty

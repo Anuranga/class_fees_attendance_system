@@ -135,6 +135,25 @@ class ClassController extends Controller
     }
 
     /**
+     * Permanently delete a class and its associated enrollments, attendance, payments, and papers.
+     */
+    public function destroy(ClassRoom $class): RedirectResponse
+    {
+        if (Auth::user()->isAssistant()) {
+            abort(403, 'Unauthorized. Assistants cannot delete classes.');
+        }
+
+        $this->authorizeTeacher($class);
+
+        $className = $class->name;
+        $class->delete();
+
+        return redirect()
+            ->route('teacher.classes.index')
+            ->with('success', "Class '{$className}' and its associated records have been removed.");
+    }
+
+    /**
      * Toggle registration open/closed.
      */
     public function toggleRegistration(ClassRoom $class): RedirectResponse

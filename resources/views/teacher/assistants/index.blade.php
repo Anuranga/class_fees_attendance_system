@@ -144,7 +144,10 @@
                     </div>
 
                     <form action="{{ route('teacher.assistants.destroy', $assistant) }}" method="POST"
-                          onsubmit="return confirm('Are you sure you want to delete this assistant account?');">
+                          data-confirm-title="Delete Assistant Account?"
+                          data-confirm-message="This teaching assistant will immediately lose access to all assigned classes."
+                          data-confirm-item="{{ $assistant->name }} ({{ $assistant->email }})"
+                          data-confirm-button="Delete Assistant">
                         @csrf
                         @method('DELETE')
                         <button type="submit" class="p-2 rounded-lg text-rose-500 hover:bg-rose-50 text-xs font-semibold transition-colors cursor-pointer" title="Delete assistant">

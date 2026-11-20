@@ -167,7 +167,10 @@
                                         </a>
 
                                         <form action="{{ route('teacher.fees.destroy', $record->payment) }}" method="POST"
-                                              onsubmit="return confirm('Void/delete receipt {{ $record->payment->receipt_no }}?')">
+                                              data-confirm-title="Void Payment Receipt?"
+                                              data-confirm-message="This payment receipt will be permanently removed from the fee ledger and daily cash book."
+                                              data-confirm-item="Receipt {{ $record->payment->receipt_no }} — {{ $record->student->full_name }}"
+                                              data-confirm-button="Void Receipt">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50" title="Void Payment">

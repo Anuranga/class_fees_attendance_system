@@ -208,7 +208,10 @@
                                         </form>
 
                                         <form action="{{ route('admin.users.destroy', $assistant) }}" method="POST"
-                                              onsubmit="return confirm('Delete this assistant account?');">
+                                              data-confirm-title="Delete Assistant Account?"
+                                              data-confirm-message="This assistant account will be permanently removed."
+                                              data-confirm-item="{{ $assistant->name }} ({{ $assistant->email }})"
+                                              data-confirm-button="Delete Assistant">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="text-rose-400 hover:text-rose-600 p-1" title="Delete assistant">
@@ -251,7 +254,10 @@
                         @endif
 
                         <form action="{{ route('admin.users.destroy', $t) }}" method="POST"
-                              onsubmit="return confirm('Are you sure you want to delete this instructor account and all their assigned classes?');">
+                              data-confirm-title="Delete Instructor Account?"
+                              data-confirm-message="Deleting this instructor will permanently remove their account and all their assigned classes."
+                              data-confirm-item="{{ $t->name }} ({{ $t->email }})"
+                              data-confirm-button="Delete Instructor">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="px-2 py-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 font-semibold transition-colors flex items-center gap-1" title="Delete instructor">

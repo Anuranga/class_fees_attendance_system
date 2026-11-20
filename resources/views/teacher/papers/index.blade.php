@@ -168,7 +168,11 @@
                                     </a>
 
                                     <form action="{{ route('teacher.papers.destroy', $paper) }}" method="POST"
-                                          onsubmit="return confirm('Delete this paper and all recorded student marks?');" class="inline">
+                                          data-confirm-title="Delete Paper & Marks?"
+                                          data-confirm-message="All recorded student marks and graph data for this paper will be permanently removed."
+                                          data-confirm-item="{{ $paper->title }} ({{ $paper->classRoom->name }})"
+                                          data-confirm-button="Delete Paper"
+                                          class="inline">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer" title="Delete Paper">

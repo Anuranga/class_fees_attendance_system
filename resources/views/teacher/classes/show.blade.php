@@ -59,9 +59,25 @@
             </button>
 
             <button @click="editClassModal = true" 
-                    class="px-3 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold border border-slate-200 transition-all" title="Edit Class Details">
+                    class="px-3 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold border border-slate-200 transition-all cursor-pointer" title="Edit Class Details">
                 <i class="fa-solid fa-gear"></i>
             </button>
+
+            @if(!Auth::user()->isAssistant())
+                <form action="{{ route('teacher.classes.destroy', $classRoom) }}" method="POST"
+                      data-confirm-title="Delete Class?"
+                      data-confirm-message="Deleting this class will permanently remove all its enrollments, attendance logs, fee receipts, and paper marks."
+                      data-confirm-item="{{ $classRoom->name }} ({{ $classRoom->grade_level }})"
+                      data-confirm-button="Delete Class">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit"
+                            class="px-3 py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold border border-rose-200 transition-all cursor-pointer"
+                            title="Delete Class">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                </form>
+            @endif
         </div>
     </div>
 
@@ -256,11 +272,14 @@
 
                                     <!-- Remove Student -->
                                     <form action="{{ route('teacher.classes.students.remove', [$classRoom, $enrollment->student]) }}" method="POST"
-                                          onsubmit="return confirm('Remove student {{ $enrollment->student->full_name }} from this class?')">
+                                          data-confirm-title="Remove Student from Class?"
+                                          data-confirm-message="This student will be unenrolled from {{ $classRoom->name }}."
+                                          data-confirm-item="{{ $enrollment->student->full_name }} ({{ $enrollment->student->admission_number }})"
+                                          data-confirm-button="Remove Student">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" 
-                                                class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                                                class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
                                                 title="Remove from class">
                                             <i class="fa-solid fa-trash-can text-sm"></i>
                                         </button>
